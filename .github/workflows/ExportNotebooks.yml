@@ -1,15 +1,15 @@
 name: Export Pluto notebooks & Deploy
+
 on:
-    push:
-        branches:
-            - main
-    pull_request:
-        branches:
-            - main
-    workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
 concurrency:
-    group: export
-    cancel-in-progress: true
+  group: export
+  cancel-in-progress: true
 
 jobs:
     build-and-deploy:
@@ -46,8 +46,7 @@ jobs:
                   import PlutoPages
                   
                   PlutoPages.generate("."; html_report_path="generation_report.html")
-                  
-                  cp("./netlify.toml", "./_site/netlify.toml")'
+
               env:
                 JULIA_PKG_SERVER: ""
 
@@ -63,4 +62,4 @@ jobs:
               with:
                   token: ${{ secrets.GITHUB_TOKEN }}
                   branch: gh-pages
-                  folder: www
+                  folder: _site
