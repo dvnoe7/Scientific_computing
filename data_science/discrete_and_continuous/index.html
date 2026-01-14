@@ -1,0 +1,148 @@
+<!DOCTYPE html><html lang="en">
+<head>
+
+<title>Discrete and Continuous — Interactive Computational Thinking — MIT</title>
+<meta name="description" content='' />
+
+<link rel="root" href="../.." />
+
+<link rel="icon" href="../../assets/favicon.ico" />
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+
+<link rel="stylesheet" href="../../assets/styles/index.css" type="text/css" />
+<link rel="stylesheet" href="../../assets/styles/layout.css" type="text/css" />
+<script src="../../assets/scripts/sidebar.js" type="module"></script>
+
+<link rel="pp-search-data" href="../../pp_search_data.json" />
+<script src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js" integrity="sha256-DFDZACuFeAqEKv/7Vnu1Tt5ALa58bcWZegGGFNgET8g=" crossorigin="anonymous" defer></script>
+<script src="../../assets/scripts/search.js" type="module" defer></script>
+
+<script src="https://cdn.jsdelivr.net/npm/lite-youtube-embed@0.3.4/src/lite-yt-embed.js" integrity="sha256-UyTkvYZC/3h/rCA7QBuOG/oGQCKOOJ4WOotzj/Dd70Y=" crossorigin="anonymous" defer></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lite-youtube-embed@0.3.4/src/lite-yt-embed.css" integrity="sha256-w5MMSroouA6UcvWn3fonDvoZPvDX3dhQM0Vltk00dPs=" crossorigin="anonymous">
+
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "8572a580bead4b729ad55779ba3a1cd6"}'></script>
+
+<script data-goatcounter="https://computationalthinking-stats.plutojl.org/count" async src="//computationalthinking-stats.plutojl.org/count.js"></script>
+
+<meta name="viewport" content="width=device-width"><meta charset="utf-8">
+<meta name="pluto-insertion-spot-meta">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="white"><meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2a2928"><meta name="color-scheme" content="light dark"><link rel="pluto-external-source" id="pluto-logo-big" href="https://cdn.jsdelivr.net/gh/fonsp/Pluto.jl@0.20.21/frontend-dist/logo.49a14041.svg"><link rel="pluto-external-source" id="pluto-logo-small" href="https://cdn.jsdelivr.net/gh/fonsp/Pluto.jl@0.20.21/frontend-dist/favicon_unsaturated.c11d4d33.svg"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonsp/Pluto.jl@0.20.21/frontend-dist/editor.5017d7bd.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonsp/Pluto.jl@0.20.21/frontend-dist/editor.8365375a.css"><script type="module" src="https://cdn.jsdelivr.net/gh/fonsp/Pluto.jl@0.20.21/frontend-dist/index.8d714875.js"></script><script type="module" src="https://cdn.jsdelivr.net/gh/fonsp/Pluto.jl@0.20.21/frontend-dist/editor.runtime.dda76f2f.js"></script><script defer>console.log("Pluto.jl, by Fons van der Plas (https://github.com/fonsp), Mikołaj Bochenski (https://github.com/malyvsen), Michiel Dral (https://github.com/dralletje) and friends \uD83C\uDF08");</script><script src="https://cdn.jsdelivr.net/gh/fonsp/Pluto.jl@0.20.21/frontend-dist/editor.21e3b1fd.js" defer></script><script id="iframe-resizer-content-window-script" src="https://cdn.jsdelivr.net/gh/fonsp/Pluto.jl@0.20.21/frontend-dist/editor.69996afe.js" crossorigin defer></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonsp/Pluto.jl@0.20.21/frontend-dist/editor.a19283c8.css" type="text/css"><script data-pluto-file="launch-parameters">
+window.pluto_notebook_id = undefined;
+window.pluto_isolated_cell_ids = undefined;
+window.pluto_notebookfile = undefined;
+window.pluto_disable_ui = true;
+window.pluto_slider_server_url = undefined;
+window.pluto_binder_url = "https://mybinder.org/v2/gh/fonsp/pluto-on-binder/v0.20.21";
+window.pluto_statefile = undefined;
+window.pluto_preamble_html = undefined;
+window.pluto_recording_url = undefined;
+window.pluto_recording_audio_url = undefined;
+</script>
+
+<meta name="pluto-insertion-spot-parameters">
+<script src="https://cdn.jsdelivr.net/gh/fonsp/Pluto.jl@0.20.21/frontend-dist/editor.2d3393ce.js" type="module" defer></script><script src="https://cdn.jsdelivr.net/gh/fonsp/Pluto.jl@0.20.21/frontend-dist/index.11569726.js"></script><link rel="pluto-external-source" id="MathJax-script" href="https://cdn.jsdelivr.net/gh/fonsp/Pluto.jl@0.20.21/frontend-dist/tex-svg-full.f72d1ae1.js" type="text/javascript">
+<meta name="pluto-insertion-spot-preload">
+
+
+</head>
+<body>
+    <div id="pages-layout">
+        <button id="toggle-nav" title="Open navigation"></button>
+        <nav id="pages-sidebar">
+        <div>
+        <ul>
+            <li class="sidebar-about">
+                <div class="course-title">
+                    <h1><a href="../.."><span>Introduction to</span> <span>Scientific Computing</span></a></h1>
+                    <h2><span>Make mathematics your playground!</span></h2>
+                </div>
+                <div class="authors">
+                    by <a href="http://math.mit.edu/~edelman">Alan Edelman</a>, <a href="http://sistemas.fciencias.unam.mx/~dsanders/">David P. Sanders</a> &amp; <a href="https://people.csail.mit.edu/cel/">Charles E. Leiserson</a>
+                </div>
+            </li>
+            <li>
+                <div class="search-bar">
+                    <form action="../../search" method="GET">
+                        <input type="search" name="q" placeholder="Search...">
+                        <input type=submit value="🔎">
+                    </form>
+                </div>
+            </li>
+            <li>
+                <div class="track-chooser">
+                    <label>
+                    <h2>Choose your track:</h2>
+                    <select>
+                        <option value="">Choose...</option>
+                        <option value="julia">💻 Julia programming</option>
+                        <option value="math">🎨 Mathematics</option>
+                        <option value="climate">🌎 Climate science</option>
+                        <option value="data">📊 Data science</option>
+                    </select>
+                    </label>
+                </div>
+            </li>
+        <li>
+<h3>welcome</h3>
+<ul>
+<li class=' lecture tag_welcome'><a href='../../installation/'><span class="entry-number"></span> Software installation</a></li>
+</ul>
+</li>
+<li>
+<h3>Module 1: Images, Transformations, Abstractions</h3>
+<ul>
+<li class=' lecture tag_lecture tag_module1 tag_philip tag_track_julia tag_matrix tag_image'><a href='../../image_abstractions/images/' title=''><span class="entry-number">1.1</span> Images as Data and Arrays</a></li><li class=' lecture tag_lecture tag_module1 tag_track_julia tag_track_math'><a href='../../image_abstractions/abstraction/' title=''><span class="entry-number">1.2</span> Abstraction</a></li>
+</ul>
+</li>
+<li>
+<h3>Module 2: Social Science &amp; Data Science</h3>
+<ul>
+<li class='active lecture tag_lecture tag_module2 tag_track_math tag_discrete tag_continuous'><a href='../../data_science/discrete_and_continuous/' title=''><span class="entry-number">2.7</span> Discrete and Continuous</a></li>
+</ul>
+</li>
+<li>
+<h3>Module 3: Climate Science</h3>
+<ul>
+<li class=' lecture tag_lecture tag_module3 tag_epidemiology tag_track_math tag_track_climate tag_plotting tag_continuous tag_discrete tag_ODE tag_differential_equation tag_modeling'><a href='../../climate_science/time_stepping/' title=''><span class="entry-number">3.1</span> Time stepping</a></li><li class=' lecture tag_lecture tag_module3 tag_PDE tag_differential_equation tag_track_math tag_track_climate tag_structure tag_modeling tag_climate tag_simulation tag_fluid_simulation tag_continuous tag_advection–diffusion'><a href='../../climate_science/2d_advection_diffusion/' title=''><span class="entry-number">3.9</span> Advection and diffusion in 2D</a></li>
+</ul>
+</li>
+
+                <li><hr></li>
+            <li class="sidebar-about">
+                <div class="semester-details">
+                    <a href="../../semesters/">Fall 2024</a>
+                    <div class="course-numbers"><span>6.C25</span> / <span>18.C25</span> / <span style="opacity: .8;">etc</span></div>
+                </div>
+                <div class="logos">
+                    <picture title="Massachusetts Institute of Technology">
+                        <img src="../../assets/MIT_logo.svg">
+                    </picture>
+                    <picture title="Julia Programming Language">
+                        <source srcset="../../assets/julia-logo-dark.svg" media="(prefers-color-scheme: dark)" />
+                        <img src="../../assets/julia-logo-color.svg">
+                    </picture>
+                </div>
+            </li>
+        </ul>
+        </div>
+        </nav>
+        <div id="pages-content">
+           <div class="lecture-header" >
+     <p class="number">Section 2.7</p>
+     <h1>Discrete and Continuous</h1>
+     
+     <div class="video">
+
+         <h4>Lecture Video</h4>
+         <div>
+             <lite-youtube videoid='H6Dcx3YeTkE' params="modestbranding=1&rel=0"></lite-youtube>
+         </div>
+     </div>
+ </div>
+ 
+        <pluto-editor statefile='../../generated_assets/discrete_and_continuous_dd4485bb.plutostate' notebookfile='../../generated_assets/discrete_and_continuous_f9176397.jl' disable-ui=''></pluto-editor>
+
+        </div>
+    </div>
+</body>
+</html>
