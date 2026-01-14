@@ -45,8 +45,7 @@ jobs:
                   Pkg.instantiate()
                   import PlutoPages
                   
-                  PlutoPages.generate("."; html_report_path="generation_report.html")
-                  
+                  PlutoPages.generate("."; html_report_path="generation_report.html")'
               env:
                 JULIA_PKG_SERVER: ""
 
