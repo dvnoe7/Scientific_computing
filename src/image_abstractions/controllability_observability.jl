@@ -3,11 +3,10 @@
 
 #> [frontmatter]
 #> chapter = 1
-#> video = "https://www.youtube.com/watch?v=3zTO3LEY-cM"
 #> image = ""
 #> section = 3
 #> order = 3
-#> title = "Controllability and Observabilityn"
+#> title = "Controllability and Observability"
 #> layout = "layout.jlhtml"
 #> youtube_id = "3zTO3LEY-cM"
 #> description = ""
