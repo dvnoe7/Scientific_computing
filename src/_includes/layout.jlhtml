@@ -167,13 +167,7 @@ $(pluto_head)
                     f("title", basename(page.input.relative_path))
                 )</h1>
                 
-                <div class="video">
-
-                    <h4>Lecture Video</h4>
-                    <div>
-                        <lite-youtube videoid=$(f("youtube_id", "notfound")) params="modestbranding=1&rel=0"></lite-youtube>
-                    </div>
-                </div>
+                
             </div>
             """) : nothing)
         $(content)
