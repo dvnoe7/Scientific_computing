@@ -3,12 +3,13 @@
 
 #> [frontmatter]
 #> chapter = 1
+#> video = ""
 #> image = ""
 #> section = 3
 #> order = 3
 #> title = "Controllability and Observability"
 #> layout = "layout.jlhtml"
-#> youtube_id = "3zTO3LEY-cM"
+#> youtube_id = ""
 #> description = ""
 #> tags = ["lecture", "module1", "track_julia", "track_math"]
 
