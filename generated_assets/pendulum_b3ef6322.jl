@@ -13,7 +13,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ d5fbed1e-cc38-4da1-836c-e3933b7138bc
-using ControlSystemsBase,LinearAlgebra,PlutoUI ,Plots
+using LinearAlgebra,PlutoUI,OrdinaryDiffEq ,Plots
 
 # ╔═╡ 4b0ec2a0-0dbb-11f1-bdf1-b12e0ae4e234
 function cartpend!(du, u, p, t)
