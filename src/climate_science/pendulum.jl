@@ -1,6 +1,14 @@
 ### A Pluto.jl notebook ###
 # v0.20.21
 
+#> [frontmatter]
+#> chapter = 3
+#> section = 6
+#> order = 6
+#> title = "Control of Pendulum on a cart"
+#> layout = "layout.jlhtml"
+#> tags = ["lecture", "module1", "track_julia", "track_math"]
+
 using Markdown
 using InteractiveUtils
 
