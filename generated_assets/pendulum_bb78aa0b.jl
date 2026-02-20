@@ -13,7 +13,10 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ d5fbed1e-cc38-4da1-836c-e3933b7138bc
-using ControlSystemsBase,LinearAlgebra,PlutoUI,DifferentialEquations,Plots
+using ControlSystemsBase
+
+# ╔═╡ d1b654ff-4b17-46cc-8a99-172ff7e7633c
+using LinearAlgebra,PlutoUI,DifferentialEquations,Plots
 
 # ╔═╡ 4b0ec2a0-0dbb-11f1-bdf1-b12e0ae4e234
 function cartpend!(du, u, p, t)
@@ -105,7 +108,7 @@ PlutoUI.LocalResource("lqr_penducart.mp4")
 # ╔═╡ ca0ad9ee-cd43-445b-818c-035a9e28a48a
 function sim_cartpend(u0,tspan,p)
 	prob = ODEProblem(cartpend!, u0, tspan, p)
-	sol = solve(prob, KenCarp5(), saveat=0.001)
+	sol = solve(prob, Vern9(), saveat=0.001)
 	t = sol.t
 	x = sol[1, :]
 	θ = sol[3, :]
@@ -3044,6 +3047,7 @@ version = "1.13.0+0"
 
 # ╔═╡ Cell order:
 # ╠═d5fbed1e-cc38-4da1-836c-e3933b7138bc
+# ╠═d1b654ff-4b17-46cc-8a99-172ff7e7633c
 # ╠═4b0ec2a0-0dbb-11f1-bdf1-b12e0ae4e234
 # ╠═ef7603ef-7443-455d-ad61-bcb8c86c59b3
 # ╠═9957936f-0990-422a-8d14-32d9b6eae64c
@@ -3063,7 +3067,7 @@ version = "1.13.0+0"
 # ╠═47676210-77ed-43be-8bfb-a48b5354330a
 # ╠═81443c96-9285-43b0-817f-0cb3b203461d
 # ╠═9dc4f1be-4fef-489c-b3c4-41ad2ac22514
-# ╟─ca0ad9ee-cd43-445b-818c-035a9e28a48a
+# ╠═ca0ad9ee-cd43-445b-818c-035a9e28a48a
 # ╟─d28d6d09-37c9-4275-af87-649f04ab1508
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
