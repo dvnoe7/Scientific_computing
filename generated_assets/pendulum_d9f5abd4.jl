@@ -53,9 +53,6 @@ begin
 end;
 
 
-# ╔═╡ 0da38768-91a9-40e7-aa2c-61d19fd07d86
-PlutoUI.LocalResource("videos/pendulum_cart.mp4")
-
 # ╔═╡ 87d3c999-c354-4eb1-9e57-6a2137ed9230
 s = 1 # pendulum up (s=1)
 
@@ -85,9 +82,6 @@ end
 # ╔═╡ 33ebcd3c-8778-424e-863e-d5713cee131e
 eigvals(A-B*K₂)
 
-# ╔═╡ e81622a9-841d-436b-a60f-3c173424166f
-PlutoUI.LocalResource("videos/pole_place.mp4")
-
 # ╔═╡ f8dc507b-15d0-45c2-a8f6-21f7b82ffdc6
 begin
 	
@@ -98,9 +92,6 @@ begin
 	R = 0.001
 	K₃ = lqr(A,B,Q,R)
 end
-
-# ╔═╡ 81443c96-9285-43b0-817f-0cb3b203461d
-PlutoUI.LocalResource("videos/lqr_penducart.mp4")
 
 # ╔═╡ ca0ad9ee-cd43-445b-818c-035a9e28a48a
 function sim_cartpend(u0,tspan,p)
@@ -2602,7 +2593,6 @@ version = "1.13.0+0"
 # ╠═4b0ec2a0-0dbb-11f1-bdf1-b12e0ae4e234
 # ╠═ef7603ef-7443-455d-ad61-bcb8c86c59b3
 # ╠═9957936f-0990-422a-8d14-32d9b6eae64c
-# ╠═0da38768-91a9-40e7-aa2c-61d19fd07d86
 # ╠═3575030c-c037-4beb-b162-00cd8ce3578e
 # ╠═87d3c999-c354-4eb1-9e57-6a2137ed9230
 # ╠═36650a43-5d50-44fe-9348-70f395e4368b
@@ -2612,11 +2602,9 @@ version = "1.13.0+0"
 # ╠═0c98e1fa-24bc-49ef-846d-c9e0c8744bad
 # ╠═33ebcd3c-8778-424e-863e-d5713cee131e
 # ╠═c0b2e678-91e2-4f68-b470-f0b4c3a5dd8c
-# ╠═e81622a9-841d-436b-a60f-3c173424166f
 # ╠═900cf649-47de-4a9a-80a5-1c0cecccac7d
 # ╠═f8dc507b-15d0-45c2-a8f6-21f7b82ffdc6
 # ╠═47676210-77ed-43be-8bfb-a48b5354330a
-# ╠═81443c96-9285-43b0-817f-0cb3b203461d
 # ╠═9dc4f1be-4fef-489c-b3c4-41ad2ac22514
 # ╠═ca0ad9ee-cd43-445b-818c-035a9e28a48a
 # ╟─d28d6d09-37c9-4275-af87-649f04ab1508
