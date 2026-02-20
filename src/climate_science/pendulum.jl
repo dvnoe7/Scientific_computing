@@ -105,7 +105,7 @@ PlutoUI.LocalResource("lqr_penducart.mp4")
 # ╔═╡ ca0ad9ee-cd43-445b-818c-035a9e28a48a
 function sim_cartpend(u0,tspan,p)
 	prob = ODEProblem(cartpend!, u0, tspan, p)
-	sol = solve(prob, Vern(), saveat=0.001)
+	sol = solve(prob, Vern9(), saveat=0.001)
 	t = sol.t
 	x = sol[1, :]
 	θ = sol[3, :]
