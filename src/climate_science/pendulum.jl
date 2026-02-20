@@ -45,33 +45,28 @@ end
 # ╔═╡ ef7603ef-7443-455d-ad61-bcb8c86c59b3
 begin
 	m = 1
-	M = 1
+	M = 5
 	L = 2
 	g = -10
 	d = 1
-	F_1 = u->0
-	p = (m,M,L,g,d,F_1)
-	u0_1 = [-3.0, 0.0, 3,0.2]   # small angle
+	
 end;
 
 
-# ╔═╡ ddab9a10-84f1-473d-9b57-5bad1496f757
-A= [
-    0        1           0               0;
-    0       -d/M       -m*g/M           0;
-    0        0           0               1;
-    0      -d/(M*L)  -(M+m)*g/(M*L)     0
-]
-	
+# ╔═╡ 0da38768-91a9-40e7-aa2c-61d19fd07d86
+PlutoUI.LocalResource("pendulum_cart.mp4")
 
+# ╔═╡ 87d3c999-c354-4eb1-9e57-6a2137ed9230
+s = 1 # pendulum up (s=1)
 
-# ╔═╡ 906cadf5-5801-4b50-b2a0-d5a505a294da
-B = [
-        0;
-        1/M;
-        0;
-        1/(M*L)
-    ];
+# ╔═╡ 36650a43-5d50-44fe-9348-70f395e4368b
+A = [0 1 0 0;
+    0 -d/M -m*g/M 0;
+    0 0 0 1;
+    0 -s*d/(M*L) -s*(m+M)*g/(M*L) 0];
+
+# ╔═╡ e0623f48-4da6-4ca9-bc83-e3c443c8441c
+B = [0; 1/M; 0; s*1/(M*L)];
 
 # ╔═╡ 5b9c2410-6521-4b83-b4b9-e3c0300185d7
 md"""
@@ -83,17 +78,34 @@ rank(ctrb(A,B))
 
 # ╔═╡ 0c98e1fa-24bc-49ef-846d-c9e0c8744bad
 begin
-		eigs = [-2.0; -2.2; -2.4; -2.6] 
-		K = place(A,B,eigs)
+		eigs = [-1.1; -1.2; -1.3; -1.4] 
+		K₂ = place(A,B,eigs)
 end
 
 # ╔═╡ 33ebcd3c-8778-424e-863e-d5713cee131e
-eigvals(A-B*K)
+eigvals(A-B*K₂)
+
+# ╔═╡ e81622a9-841d-436b-a60f-3c173424166f
+PlutoUI.LocalResource("pole_place.mp4")
+
+# ╔═╡ f8dc507b-15d0-45c2-a8f6-21f7b82ffdc6
+begin
+	
+	Q = [1 0 0 0
+		 0 1 0 0
+		 0 0 10 0
+		 0 0 0 100]
+	R = 0.001
+	K₃ = lqr(A,B,Q,R)
+end
+
+# ╔═╡ 81443c96-9285-43b0-817f-0cb3b203461d
+PlutoUI.LocalResource("lqr_penducart.mp4")
 
 # ╔═╡ ca0ad9ee-cd43-445b-818c-035a9e28a48a
 function sim_cartpend(u0,tspan,p)
 	prob = ODEProblem(cartpend!, u0, tspan, p)
-	sol = solve(prob, KenCarp5(), saveat=0.05)
+	sol = solve(prob, KenCarp5(), saveat=0.001)
 	t = sol.t
 	x = sol[1, :]
 	θ = sol[3, :]
@@ -102,28 +114,38 @@ end
 
 # ╔═╡ 9957936f-0990-422a-8d14-32d9b6eae64c
 begin	
-	tspan = (0.0, 30.0)
-	x,θ,t=sim_cartpend(u0_1,tspan,p)
+	F₁ = u->0
+	p₁ = (m,M,L,g,d,F₁)
+	u0_1 = [-3.0, 0.0, 3,0.2]   # small angle
+	tspan₁ = (0.0, 10.0)
+	x₁,θ₁,t₁=sim_cartpend(u0_1,tspan₁,p₁)
 end;
 
 # ╔═╡ c0b2e678-91e2-4f68-b470-f0b4c3a5dd8c
 begin 
-	u0_2 = [-3.0, -1.0, 3,0.2] 
-	target = [1.0; 0.0; π; 0.0]
-	F_control = u->-K*(u-target)
-	p₂=(m,M,L,g,d,F_control)
+	u0_2 = [-3.0, -1.0, 3,-0.2] 
+	target₂ = [2.0; 0.0; π; 0.0]
+	F₂ = u->-K₂*(u-target₂)
+	p₂=(m,M,L,g,d,F₂)
 	tspan₂ = (0.0, 10.0)
 	x₂,θ₂,t₂=sim_cartpend(u0_2,tspan₂,p₂)
 end
 
-# ╔═╡ c9b548b4-6569-488e-9e72-4eb958af4bf1
-x₂[end]
+# ╔═╡ 47676210-77ed-43be-8bfb-a48b5354330a
+begin 
+	u0_3 = [-3.0; 0.0; π+.1; 0] 
+	target₃ = [1.0; 0.0; π; 0.0]
+	F₃ = u->-K₃*(u-target₃)
+	p₃=(m,M,L,g,d,F₃)
+	tspan₃ = (0.0, 10.0)
+	x₃,θ₃,t₃=sim_cartpend(u0_3,tspan₃,p₃)
+end
 
 # ╔═╡ d28d6d09-37c9-4275-af87-649f04ab1508
 function draw_cart(x,θ,t,fps;name = nothing)
 	# Animation
 	# --------------------
-	anim = @animate for i in 1:length(t)
+	anim = @animate for i in 1:50:length(t)
 	
 		
 	    # Pendulum position
@@ -141,7 +163,7 @@ function draw_cart(x,θ,t,fps;name = nothing)
     lw=3,
     label=false,
     xlims=(-5,6),
-    ylims=(-2.5,2.5),
+    ylims=(-2.5,3),
     aspect_ratio=:equal
 	   ) # ground
 		
@@ -163,13 +185,13 @@ function draw_cart(x,θ,t,fps;name = nothing)
 end
 
 # ╔═╡ 3575030c-c037-4beb-b162-00cd8ce3578e
-# ╠═╡ disabled = true
-#=╠═╡
-draw_cart(x,θ,t,20, name = "pendulum_cart.mp4")
-  ╠═╡ =#
+draw_cart(x₁,θ₁,t₁,40, name = "pendulum_cart.mp4")
 
 # ╔═╡ 900cf649-47de-4a9a-80a5-1c0cecccac7d
-draw_cart(x₂,θ₂,t₂,20, name = "pole_place.mp4")
+draw_cart(x₂,θ₂,t₂,40, name = "pole_place.mp4")
+
+# ╔═╡ 9dc4f1be-4fef-489c-b3c4-41ad2ac22514
+draw_cart(x₃,θ₃,t₃,40, name = "lqr_penducart.mp4")
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -3025,17 +3047,23 @@ version = "1.13.0+0"
 # ╠═4b0ec2a0-0dbb-11f1-bdf1-b12e0ae4e234
 # ╠═ef7603ef-7443-455d-ad61-bcb8c86c59b3
 # ╠═9957936f-0990-422a-8d14-32d9b6eae64c
+# ╠═0da38768-91a9-40e7-aa2c-61d19fd07d86
 # ╠═3575030c-c037-4beb-b162-00cd8ce3578e
-# ╠═ddab9a10-84f1-473d-9b57-5bad1496f757
-# ╠═906cadf5-5801-4b50-b2a0-d5a505a294da
+# ╠═87d3c999-c354-4eb1-9e57-6a2137ed9230
+# ╠═36650a43-5d50-44fe-9348-70f395e4368b
+# ╠═e0623f48-4da6-4ca9-bc83-e3c443c8441c
 # ╟─5b9c2410-6521-4b83-b4b9-e3c0300185d7
 # ╠═50c38bba-8ac6-44a3-9b2b-b2d944216df9
 # ╠═0c98e1fa-24bc-49ef-846d-c9e0c8744bad
 # ╠═33ebcd3c-8778-424e-863e-d5713cee131e
 # ╠═c0b2e678-91e2-4f68-b470-f0b4c3a5dd8c
-# ╠═c9b548b4-6569-488e-9e72-4eb958af4bf1
-# ╠═900cf649-47de-4a9a-80a5-1c0cecccac7d
-# ╠═ca0ad9ee-cd43-445b-818c-035a9e28a48a
-# ╠═d28d6d09-37c9-4275-af87-649f04ab1508
+# ╠═e81622a9-841d-436b-a60f-3c173424166f
+# ╟─900cf649-47de-4a9a-80a5-1c0cecccac7d
+# ╠═f8dc507b-15d0-45c2-a8f6-21f7b82ffdc6
+# ╠═47676210-77ed-43be-8bfb-a48b5354330a
+# ╠═81443c96-9285-43b0-817f-0cb3b203461d
+# ╠═9dc4f1be-4fef-489c-b3c4-41ad2ac22514
+# ╟─ca0ad9ee-cd43-445b-818c-035a9e28a48a
+# ╟─d28d6d09-37c9-4275-af87-649f04ab1508
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
