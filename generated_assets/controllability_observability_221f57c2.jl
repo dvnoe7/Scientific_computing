@@ -2,9 +2,9 @@
 # v0.20.21
 
 #> [frontmatter]
-#> chapter = 1
-#> section = 3
-#> order = 3
+#> chapter = 3
+#> section = 5
+#> order = 5
 #> title = "Controllability and Observability"
 #> layout = "layout.jlhtml"
 #> tags = ["lecture", "module1", "track_julia", "track_math"]
