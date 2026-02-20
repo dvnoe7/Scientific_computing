@@ -7,7 +7,7 @@
 #> order = 5
 #> title = "Controllability and Observability"
 #> layout = "layout.jlhtml"
-#> tags = ["lecture", "module1", "track_julia", "track_math"]
+#> tags = ["lecture", "module3", "track_julia", "track_math"]
 
 using Markdown
 using InteractiveUtils
