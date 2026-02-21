@@ -94,6 +94,15 @@ end
 # ╔═╡ 33ebcd3c-8778-424e-863e-d5713cee131e
 eigvals(A-B*K₂)
 
+# ╔═╡ c0d998a3-fbfa-4500-a3a1-3ff1c22c6ce8
+@bind i₂ Slider(1:101)
+
+# ╔═╡ 9ac76be8-2e3a-4f19-bef0-02bfa01014bf
+t₂_current = round(0.1*(i₂-1),digits=2)
+
+# ╔═╡ 02f3af5a-1384-4b04-9fc3-0afe4e724c00
+@bindname run_animation₂ CheckBox(default=true)
+
 # ╔═╡ f8dc507b-15d0-45c2-a8f6-21f7b82ffdc6
 begin
 	
@@ -104,6 +113,15 @@ begin
 	R = 0.001
 	K₃ = lqr(A,B,Q,R)
 end
+
+# ╔═╡ 3e7672e1-92b6-45b0-9010-c2bd2699eba4
+@bind i₃ Slider(1:101)
+
+# ╔═╡ 6f74ed45-e706-4876-95c8-78c3d6b3becd
+t₃_current = round(0.1*(i₃-1),digits=2)
+
+# ╔═╡ ee477c54-5008-41e4-9064-f04a20de55d9
+@bindname run_animation₃ CheckBox(default=true)
 
 # ╔═╡ 51d03650-13e9-4b24-b9ac-21ebe1dca093
 function multislider(names,ranges,defaults,title)
@@ -127,7 +145,7 @@ function multislider(names,ranges,defaults,title)
 end
 
 # ╔═╡ 0a45bd2b-76cb-4e1e-b391-e362ec22c3d9
-@bind sim_2 confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀","x-target"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15,-5:0.01:5],[0, 0, 3.1, 0,0],"Initial condition and targets"))
+@bind sim_2 confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀","x-target"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15,-5:0.01:5],[0, -0.2, 3.1, 1,4],"Initial condition and targets"))
 
 # ╔═╡ 1f46cc17-9488-4cbd-9f0c-d081a5e6a6d2
 begin
@@ -136,7 +154,7 @@ begin
 end;
 
 # ╔═╡ c850c798-b181-4307-852a-a192071772bb
-@bind sim_3 confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀","x-target"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15,-5:0.01:5],[0, 0, 3.1, 0,4],"Initial condition and targets"))
+@bind sim_3 confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀","x-target"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15,-5:0.01:5],[0, -0.2, 3.1, 1,4],"Initial condition and targets"))
 
 # ╔═╡ 548239e5-d628-4888-b0b6-0ea21c0d4b72
 begin
@@ -181,8 +199,41 @@ begin
 	x₃,θ₃,t₃=sim_cartpend(collect(u0_3),tspan₃,p₃)
 end;
 
+# ╔═╡ b0979471-c10f-459f-9b56-b70447d5db79
+function plot_cart(x,θ,t,t_current)
+	i = Int(t_current÷0.001)+1;
+	# Pendulum position
+	px = x[i] + L*sin(θ[i])
+	py = -L*cos(θ[i])
+			
+			
+	w, h = 1, 0.6
+	x_block, y = x[i]-w/2, 0.1
+	rect = Shape([x_block, x_block+w, x_block+w, x_block],[y, y, y+h, y+h])
+			
+	plot([-6, 6], [0, 0],
+	    lw=3,
+	    label=false,
+	    xlims=(-6,6),
+	    ylims=(-2.5,3),
+	    aspect_ratio=:equal
+		   ) # ground
+			
+	plot!(rect,label=false)
+	plot!([x[i]-0.3,x[i]+0.3], [0.1,0.1], seriestype=:scatter, markersize=6, label=false,color=:black)
+			
+	plot!([x[i], px], [h/2+y, py+h/2+y], lw=3, label=false,color=:black)
+	plot!([px], [py+h/2+y], seriestype=:scatter, markersize=8, label=false,color=:blue)
+end
+
+# ╔═╡ c0d99293-7cd3-41f2-937d-2d7b56447512
+plot_cart(x₂,θ₂,t₂,t₂_current)
+
+# ╔═╡ 75b22bc3-72c5-435f-9518-49b75afe7d37
+plot_cart(x₃,θ₃,t₃,t₃_current)
+
 # ╔═╡ d28d6d09-37c9-4275-af87-649f04ab1508
-function draw_cart(x,θ,t,fps;name = nothing)
+function anim_cart(x,θ,t,fps;name = nothing)
 	# Animation
 	# --------------------
 	anim = @animate for i in 1:50:length(t)
@@ -199,10 +250,10 @@ function draw_cart(x,θ,t,fps;name = nothing)
              [y, y, y+h, y+h])
 		
 	   plot(
-    [-5, 5], [0, 0],
+    [-6, 6], [0, 0],
     lw=3,
     label=false,
-    xlims=(-5,6),
+    xlims=(-6,6),
     ylims=(-2.5,3),
     aspect_ratio=:equal
 	   ) # ground
@@ -219,18 +270,26 @@ function draw_cart(x,θ,t,fps;name = nothing)
 	    mp4(anim, fps=fps)
 	else
 	    # save with the given filename
-
+		mp4(anim, name,fps=fps)
 	end
 end
 
 # ╔═╡ 3575030c-c037-4beb-b162-00cd8ce3578e
-draw_cart(x₁,θ₁,t₁,40, name = "videos/pendulum_cart.mp4")
+anim_cart(x₁,θ₁,t₁,40,name="pendu_cart.mp4")
 
 # ╔═╡ 900cf649-47de-4a9a-80a5-1c0cecccac7d
-draw_cart(x₂,θ₂,t₂,40, name = "videos/pole_place.mp4")
+if run_animation₂
+	anim_cart(x₂,θ₂,t₂,40,name="pole_place.mp4")
+else 
+	PlutoUI.LocalResource("pole_place.mp4")
+end
 
-# ╔═╡ 9dc4f1be-4fef-489c-b3c4-41ad2ac22514
-draw_cart(x₃,θ₃,t₃,40)
+# ╔═╡ 47136fb9-9582-4eee-8922-09bfc5bdd4a2
+if run_animation₃
+	anim_cart(x₃,θ₃,t₃,40,name="optimal_control.mp4")
+else
+	PlutoUI.LocalResource("optimal_control.mp4")
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -2641,7 +2700,7 @@ version = "1.13.0+0"
 # ╠═4b0ec2a0-0dbb-11f1-bdf1-b12e0ae4e234
 # ╠═ef7603ef-7443-455d-ad61-bcb8c86c59b3
 # ╠═9957936f-0990-422a-8d14-32d9b6eae64c
-# ╠═3575030c-c037-4beb-b162-00cd8ce3578e
+# ╟─3575030c-c037-4beb-b162-00cd8ce3578e
 # ╠═87d3c999-c354-4eb1-9e57-6a2137ed9230
 # ╠═36650a43-5d50-44fe-9348-70f395e4368b
 # ╠═e0623f48-4da6-4ca9-bc83-e3c443c8441c
@@ -2650,16 +2709,25 @@ version = "1.13.0+0"
 # ╠═0c98e1fa-24bc-49ef-846d-c9e0c8744bad
 # ╠═33ebcd3c-8778-424e-863e-d5713cee131e
 # ╠═c0b2e678-91e2-4f68-b470-f0b4c3a5dd8c
-# ╠═0a45bd2b-76cb-4e1e-b391-e362ec22c3d9
-# ╠═1f46cc17-9488-4cbd-9f0c-d081a5e6a6d2
-# ╠═900cf649-47de-4a9a-80a5-1c0cecccac7d
+# ╟─1f46cc17-9488-4cbd-9f0c-d081a5e6a6d2
+# ╟─0a45bd2b-76cb-4e1e-b391-e362ec22c3d9
+# ╟─c0d998a3-fbfa-4500-a3a1-3ff1c22c6ce8
+# ╟─9ac76be8-2e3a-4f19-bef0-02bfa01014bf
+# ╠═c0d99293-7cd3-41f2-937d-2d7b56447512
+# ╟─02f3af5a-1384-4b04-9fc3-0afe4e724c00
+# ╟─900cf649-47de-4a9a-80a5-1c0cecccac7d
 # ╠═f8dc507b-15d0-45c2-a8f6-21f7b82ffdc6
 # ╠═47676210-77ed-43be-8bfb-a48b5354330a
 # ╟─548239e5-d628-4888-b0b6-0ea21c0d4b72
 # ╠═c850c798-b181-4307-852a-a192071772bb
-# ╠═9dc4f1be-4fef-489c-b3c4-41ad2ac22514
+# ╠═3e7672e1-92b6-45b0-9010-c2bd2699eba4
+# ╠═6f74ed45-e706-4876-95c8-78c3d6b3becd
+# ╠═75b22bc3-72c5-435f-9518-49b75afe7d37
+# ╟─ee477c54-5008-41e4-9064-f04a20de55d9
+# ╠═47136fb9-9582-4eee-8922-09bfc5bdd4a2
 # ╟─51d03650-13e9-4b24-b9ac-21ebe1dca093
 # ╟─ca0ad9ee-cd43-445b-818c-035a9e28a48a
-# ╟─d28d6d09-37c9-4275-af87-649f04ab1508
+# ╠═b0979471-c10f-459f-9b56-b70447d5db79
+# ╠═d28d6d09-37c9-4275-af87-649f04ab1508
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
