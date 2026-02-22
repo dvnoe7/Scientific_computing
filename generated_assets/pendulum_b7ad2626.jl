@@ -65,6 +65,9 @@ begin
 end;
 
 
+# ╔═╡ 7a5bd86b-b00b-46c2-b2ee-625b5fef2446
+@bindname run_animation₁ CheckBox(default=true)
+
 # ╔═╡ 87d3c999-c354-4eb1-9e57-6a2137ed9230
 s = 1 # pendulum up (s=1)
 
@@ -106,13 +109,13 @@ t₂_current = round(0.1*(i₂-1),digits=2)
 # ╔═╡ f8dc507b-15d0-45c2-a8f6-21f7b82ffdc6
 begin
 	
-	Q = [10 0 0 0
+	Q = [1 0 0 0
 		 0 1 0 0
 		 0 0 10 0
 		 0 0 0 100]
 	R = 0.001
 	K₃ = lqr(A,B,Q,R)
-end
+end;
 
 # ╔═╡ 3e7672e1-92b6-45b0-9010-c2bd2699eba4
 @bind i₃ Slider(1:101)
@@ -168,8 +171,10 @@ function sim_cartpend(u0,tspan,p)
 	sol = solve(prob, Vern9(), saveat=0.001)
 	t = sol.t
 	x = sol[1, :]
+	ẋ = sol[2, :]
 	θ = sol[3, :]
-	x, θ, t
+	θ̇ = sol[4, :]
+	x,ẋ,θ,θ̇, t
 end
 
 # ╔═╡ 9957936f-0990-422a-8d14-32d9b6eae64c
@@ -178,7 +183,7 @@ begin
 	p₁ = (m,M,L,g,d,F₁)
 	u0_1 = [-3.0, 0.0, 3,0.2]   # small angle
 	tspan₁ = (0.0, 10.0)
-	x₁,θ₁,t₁=sim_cartpend(u0_1,tspan₁,p₁)
+	x₁,ẋ₁,θ₁,θ̇₁,t₁=sim_cartpend(u0_1,tspan₁,p₁)
 end;
 
 # ╔═╡ c0b2e678-91e2-4f68-b470-f0b4c3a5dd8c
@@ -187,7 +192,7 @@ begin
 	F₂ = u->-K₂*(u-target₂)
 	p₂=(m,M,L,g,d,F₂)
 	tspan₂ = (0.0, 10.0)
-	x₂,θ₂,t₂=sim_cartpend(u0_2,tspan₂,p₂)
+	x₂,ẋ₂,θ₂,θ̇₂,t₂=sim_cartpend(u0_2,tspan₂,p₂)
 end;
 
 # ╔═╡ 47676210-77ed-43be-8bfb-a48b5354330a
@@ -196,8 +201,25 @@ begin
 	F₃ = u->-K₃*(u-target₃)
 	p₃=(m,M,L,g,d,F₃)
 	tspan₃ = (0.0, 10.0)
-	x₃,θ₃,t₃=sim_cartpend(collect(u0_3),tspan₃,p₃)
+	x₃,ẋ₃,θ₃,θ̇₃,t₃ = sim_cartpend(collect(u0_3),tspan₃,p₃)
 end;
+
+# ╔═╡ e1435146-217f-484a-a09f-656aca108f74
+F_data = similar(x₃)
+
+# ╔═╡ 1155a739-04db-4d7d-90a0-d469c1ecdd6b
+for i in 1:length(x₃)
+	F_data[i] = (-K₃*([x₃[i] ,ẋ₃[i],θ₃[i],θ̇₃[i]]-target₃))[1]
+end
+
+# ╔═╡ c7b9947c-8cf2-4c18-942b-1599a9619794
+function plot_data(x, ẋ, θ, θ̇,t)
+	plot(t, [x ẋ θ θ̇],
+    layout = (2,2),
+    xlabel = "Time (s)",
+    label = ["x" "ẋ" "θ" "θ̇"],
+    legend = true)
+end
 
 # ╔═╡ b0979471-c10f-459f-9b56-b70447d5db79
 function plot_cart(x,θ,t,t_current)
@@ -275,7 +297,11 @@ function anim_cart(x,θ,t,fps;name = nothing)
 end
 
 # ╔═╡ 3575030c-c037-4beb-b162-00cd8ce3578e
-anim_cart(x₁,θ₁,t₁,40,name="pendu_cart.mp4")
+if run_animation₁
+	anim_cart(x₁,θ₁,t₁,40,name="pendu_cart.mp4")
+else 
+	PlutoUI.LocalResource("pendu_cart.mp4")
+end
 
 # ╔═╡ 900cf649-47de-4a9a-80a5-1c0cecccac7d
 if run_animation₂
@@ -2700,6 +2726,7 @@ version = "1.13.0+0"
 # ╠═4b0ec2a0-0dbb-11f1-bdf1-b12e0ae4e234
 # ╠═ef7603ef-7443-455d-ad61-bcb8c86c59b3
 # ╠═9957936f-0990-422a-8d14-32d9b6eae64c
+# ╟─7a5bd86b-b00b-46c2-b2ee-625b5fef2446
 # ╟─3575030c-c037-4beb-b162-00cd8ce3578e
 # ╠═87d3c999-c354-4eb1-9e57-6a2137ed9230
 # ╠═36650a43-5d50-44fe-9348-70f395e4368b
@@ -2713,21 +2740,24 @@ version = "1.13.0+0"
 # ╟─0a45bd2b-76cb-4e1e-b391-e362ec22c3d9
 # ╟─c0d998a3-fbfa-4500-a3a1-3ff1c22c6ce8
 # ╟─9ac76be8-2e3a-4f19-bef0-02bfa01014bf
-# ╠═c0d99293-7cd3-41f2-937d-2d7b56447512
+# ╟─c0d99293-7cd3-41f2-937d-2d7b56447512
 # ╟─02f3af5a-1384-4b04-9fc3-0afe4e724c00
 # ╟─900cf649-47de-4a9a-80a5-1c0cecccac7d
 # ╠═f8dc507b-15d0-45c2-a8f6-21f7b82ffdc6
 # ╠═47676210-77ed-43be-8bfb-a48b5354330a
 # ╟─548239e5-d628-4888-b0b6-0ea21c0d4b72
-# ╠═c850c798-b181-4307-852a-a192071772bb
-# ╠═3e7672e1-92b6-45b0-9010-c2bd2699eba4
+# ╟─c850c798-b181-4307-852a-a192071772bb
+# ╟─3e7672e1-92b6-45b0-9010-c2bd2699eba4
 # ╠═6f74ed45-e706-4876-95c8-78c3d6b3becd
-# ╠═75b22bc3-72c5-435f-9518-49b75afe7d37
+# ╟─e1435146-217f-484a-a09f-656aca108f74
+# ╠═1155a739-04db-4d7d-90a0-d469c1ecdd6b
+# ╟─75b22bc3-72c5-435f-9518-49b75afe7d37
 # ╟─ee477c54-5008-41e4-9064-f04a20de55d9
-# ╠═47136fb9-9582-4eee-8922-09bfc5bdd4a2
+# ╟─47136fb9-9582-4eee-8922-09bfc5bdd4a2
 # ╟─51d03650-13e9-4b24-b9ac-21ebe1dca093
 # ╟─ca0ad9ee-cd43-445b-818c-035a9e28a48a
-# ╠═b0979471-c10f-459f-9b56-b70447d5db79
-# ╠═d28d6d09-37c9-4275-af87-649f04ab1508
+# ╟─c7b9947c-8cf2-4c18-942b-1599a9619794
+# ╟─b0979471-c10f-459f-9b56-b70447d5db79
+# ╟─d28d6d09-37c9-4275-af87-649f04ab1508
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
