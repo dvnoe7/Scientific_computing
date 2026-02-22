@@ -171,8 +171,10 @@ function sim_cartpend(u0,tspan,p)
 	sol = solve(prob, Vern9(), saveat=0.001)
 	t = sol.t
 	x = sol[1, :]
+	ẋ = sol[2, :]
 	θ = sol[3, :]
-	x, θ, t
+	θ̇ = sol[4, :]
+	x,ẋ,θ,θ̇, t
 end
 
 # ╔═╡ 9957936f-0990-422a-8d14-32d9b6eae64c
@@ -181,7 +183,7 @@ begin
 	p₁ = (m,M,L,g,d,F₁)
 	u0_1 = [-3.0, 0.0, 3,0.2]   # small angle
 	tspan₁ = (0.0, 10.0)
-	x₁,θ₁,t₁=sim_cartpend(u0_1,tspan₁,p₁)
+	x₁,ẋ₁,θ₁,θ̇₁,t₁=sim_cartpend(u0_1,tspan₁,p₁)
 end;
 
 # ╔═╡ c0b2e678-91e2-4f68-b470-f0b4c3a5dd8c
@@ -190,7 +192,7 @@ begin
 	F₂ = u->-K₂*(u-target₂)
 	p₂=(m,M,L,g,d,F₂)
 	tspan₂ = (0.0, 10.0)
-	x₂,θ₂,t₂=sim_cartpend(u0_2,tspan₂,p₂)
+	x₂,ẋ₂,θ₂,θ̇₂,t₂=sim_cartpend(u0_2,tspan₂,p₂)
 end;
 
 # ╔═╡ 47676210-77ed-43be-8bfb-a48b5354330a
@@ -199,8 +201,25 @@ begin
 	F₃ = u->-K₃*(u-target₃)
 	p₃=(m,M,L,g,d,F₃)
 	tspan₃ = (0.0, 10.0)
-	x₃,θ₃,t₃ = sim_cartpend(collect(u0_3),tspan₃,p₃)
+	x₃,ẋ₃,θ₃,θ̇₃,t₃ = sim_cartpend(collect(u0_3),tspan₃,p₃)
 end;
+
+# ╔═╡ e1435146-217f-484a-a09f-656aca108f74
+F_data = similar(x₃)
+
+# ╔═╡ 1155a739-04db-4d7d-90a0-d469c1ecdd6b
+for i in 1:length(x₃)
+	F_data[i] = (-K₃*([x₃[i] ,ẋ₃[i],θ₃[i],θ̇₃[i]]-target₃))[1]
+end
+
+# ╔═╡ c7b9947c-8cf2-4c18-942b-1599a9619794
+function plot_data(x, ẋ, θ, θ̇,t)
+	plot(t, [x ẋ θ θ̇],
+    layout = (2,2),
+    xlabel = "Time (s)",
+    label = ["x" "ẋ" "θ" "θ̇"],
+    legend = true)
+end
 
 # ╔═╡ b0979471-c10f-459f-9b56-b70447d5db79
 function plot_cart(x,θ,t,t_current)
@@ -2729,12 +2748,15 @@ version = "1.13.0+0"
 # ╟─548239e5-d628-4888-b0b6-0ea21c0d4b72
 # ╟─c850c798-b181-4307-852a-a192071772bb
 # ╟─3e7672e1-92b6-45b0-9010-c2bd2699eba4
-# ╟─6f74ed45-e706-4876-95c8-78c3d6b3becd
+# ╠═6f74ed45-e706-4876-95c8-78c3d6b3becd
+# ╟─e1435146-217f-484a-a09f-656aca108f74
+# ╠═1155a739-04db-4d7d-90a0-d469c1ecdd6b
 # ╟─75b22bc3-72c5-435f-9518-49b75afe7d37
 # ╟─ee477c54-5008-41e4-9064-f04a20de55d9
 # ╟─47136fb9-9582-4eee-8922-09bfc5bdd4a2
 # ╟─51d03650-13e9-4b24-b9ac-21ebe1dca093
 # ╟─ca0ad9ee-cd43-445b-818c-035a9e28a48a
+# ╟─c7b9947c-8cf2-4c18-942b-1599a9619794
 # ╟─b0979471-c10f-459f-9b56-b70447d5db79
 # ╟─d28d6d09-37c9-4275-af87-649f04ab1508
 # ╟─00000000-0000-0000-0000-000000000001
