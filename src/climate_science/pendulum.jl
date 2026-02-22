@@ -205,7 +205,7 @@ begin
 end;
 
 # ╔═╡ e1435146-217f-484a-a09f-656aca108f74
-F_data = similar(x₃)
+F_data = similar(x₃);
 
 # ╔═╡ 1155a739-04db-4d7d-90a0-d469c1ecdd6b
 for i in 1:length(x₃)
@@ -255,37 +255,33 @@ plot_cart(x₂,θ₂,t₂,t₂_current)
 plot_cart(x₃,θ₃,t₃,t₃_current)
 
 # ╔═╡ d28d6d09-37c9-4275-af87-649f04ab1508
-function anim_cart(x,θ,t,fps;name = nothing)
+function anim_cart(X,θ,t,fps;name = nothing)
 	# Animation
 	# --------------------
-	anim = @animate for i in 1:50:length(t)
+	Px = X .+ L.*sin.(θ)
+	Py = -L.*cos.(θ)
+	w, h = 1, 0.6
+    y = 0.1
+	x_block = X .- w/2
+	Xs =[x_block x_block.+w x_block.+w x_block]
+	ys = [y, y, y+h, y+h]
 	
-		
+	base = plot([-6, 6], [0, 0],lw=3,label=false,xlims=(-6,6),ylims=(-2.5,3),aspect_ratio=:equal) # ground
+	
+	anim = @animate for i in 1:50:length(t)
+		p = deepcopy(base)
 	    # Pendulum position
-	    px = x[i] + L*sin(θ[i])
-	    py = -L*cos(θ[i])
+	    px = Px[i]
+	    py = Py[i]
+		x = X[i]
 		
+        # Rectangle coordinates (just compute, don’t store Shape)
+        xs =Xs[i,:]
+		plot!(p,xs, ys, seriestype=:shape, label=false)
+		scatter!(p,[x-0.3,x+0.3], [0.1,0.1], markersize=6, label=false,color=:black)
 		
-		w, h = 1, 0.6
-		x_block, y = x[i]-w/2, 0.1
-		rect = Shape([x_block, x_block+w, x_block+w, x_block],
-             [y, y, y+h, y+h])
-		
-	   plot(
-    [-6, 6], [0, 0],
-    lw=3,
-    label=false,
-    xlims=(-6,6),
-    ylims=(-2.5,3),
-    aspect_ratio=:equal
-	   ) # ground
-		
-		plot!(rect,label=false)
-		plot!([x[i]-0.3,x[i]+0.3], [0.1,0.1], seriestype=:scatter, markersize=6, label=false,color=:black)
-		
-	    plot!([x[i], px], [h/2+y, py+h/2+y], lw=3, label=false,color=:black)
-	    plot!([px], [py+h/2+y], seriestype=:scatter, markersize=8, label=false,color=:blue)
-		
+	    plot!(p,[x, px], [h/2+y, py+h/2+y], lw=3, label=false,color=:black)
+	    scatter!(p,[px], [py+h/2+y], markersize=8, label=false,color=:blue)
 	end
 	if isnothing(name) || isempty(name)
 	    # no filename provided, just save with a default
@@ -2750,14 +2746,14 @@ version = "1.13.0+0"
 # ╟─3e7672e1-92b6-45b0-9010-c2bd2699eba4
 # ╠═6f74ed45-e706-4876-95c8-78c3d6b3becd
 # ╟─e1435146-217f-484a-a09f-656aca108f74
-# ╠═1155a739-04db-4d7d-90a0-d469c1ecdd6b
+# ╟─1155a739-04db-4d7d-90a0-d469c1ecdd6b
 # ╟─75b22bc3-72c5-435f-9518-49b75afe7d37
 # ╟─ee477c54-5008-41e4-9064-f04a20de55d9
-# ╟─47136fb9-9582-4eee-8922-09bfc5bdd4a2
+# ╠═47136fb9-9582-4eee-8922-09bfc5bdd4a2
 # ╟─51d03650-13e9-4b24-b9ac-21ebe1dca093
 # ╟─ca0ad9ee-cd43-445b-818c-035a9e28a48a
 # ╟─c7b9947c-8cf2-4c18-942b-1599a9619794
 # ╟─b0979471-c10f-459f-9b56-b70447d5db79
-# ╟─d28d6d09-37c9-4275-af87-649f04ab1508
+# ╠═d28d6d09-37c9-4275-af87-649f04ab1508
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
