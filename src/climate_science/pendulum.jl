@@ -25,34 +25,31 @@ macro bind(def, element)
 end
 
 # ╔═╡ d5fbed1e-cc38-4da1-836c-e3933b7138bc
-using ControlSystemsBase,LinearAlgebra,PlutoUI,OrdinaryDiffEq ,Plots
+using ControlSystemsBase,LinearAlgebra,PlutoUI,OrdinaryDiffEq ,Plots,StaticArrays
 
 # ╔═╡ 4b0ec2a0-0dbb-11f1-bdf1-b12e0ae4e234
-function cartpend!(du, u, p, t)
+function cartpend(u::SVector{4}, p, t)
     # unpack parameters
     m, M, L, g, d, F_func = p
 
-    # unpack state
-    x  = u[1]
-    ẋ = u[2]
-    θ  = u[3]
-    θ̇ = u[4]
+    # unpack state (zero allocation)
+    x, ẋ, θ, θ̇ = u
 
-	F = F_func(u)[1]
-    # trigonometric shorthand
-    s = sin(θ)
-    c = cos(θ)
+    F = F_func(u)[1]
 
-    # auxiliary term
+    s, c = sincos(θ)           # faster than separate sin + cos
     D = m*L^2*(M + m*(1 - c^2))
+    invD = inv(D)              # compute once
 
-    # equations of motion
-    du[1] = ẋ
-    du[2] = (1/D) * (-m^2*L^2*g*c*s + m*L^2*(m*L*θ̇^2*s - d*ẋ)) + m*L^2*(1/D)*F
-    du[3] = θ̇
-    du[4] = (1/D) * ((M + m)*m*g*L*s - m*L*c*(m*L*θ̇^2*s - d*ẋ)) - m*L*c*(1/D)*F
+    temp = m*L*θ̇^2*s - d*ẋ
+
+    dx   = ẋ
+    dẋ  = invD*(-m^2*L^2*g*c*s + m*L^2*temp) + m*L^2*invD*F
+    dθ   = θ̇
+    dθ̇  = invD*((M + m)*m*g*L*s - m*L*c*temp) - m*L*c*invD*F
+
+    return SVector(dx, dẋ, dθ, dθ̇)
 end
-
 
 # ╔═╡ ef7603ef-7443-455d-ad61-bcb8c86c59b3
 begin
@@ -64,6 +61,14 @@ begin
 	
 end;
 
+
+# ╔═╡ 9957936f-0990-422a-8d14-32d9b6eae64c
+begin	
+	F₁ = u->0
+	p₁ = (m,M,L,g,d,F₁)
+	u0_1 = SA_F64[-3.0, 0.0, 3,0.2]   # small angle
+	tspan₁ = (0.0, 10.0)
+end;
 
 # ╔═╡ 7a5bd86b-b00b-46c2-b2ee-625b5fef2446
 @bindname run_animation₁ CheckBox(default=true)
@@ -174,46 +179,38 @@ begin
 	x₃_target = sim_3[5]
 end;
 
-# ╔═╡ ca0ad9ee-cd43-445b-818c-035a9e28a48a
-function sim_cartpend(u0,tspan,p)
-	prob = ODEProblem(cartpend!, u0, tspan, p)
-	sol = solve(prob, Vern9(), saveat=0.001)
-	t = sol.t
-	x = sol[1, :]
-	ẋ = sol[2, :]
-	θ = sol[3, :]
-	θ̇ = sol[4, :]
-	x,ẋ,θ,θ̇, t
-end
-
-# ╔═╡ 9957936f-0990-422a-8d14-32d9b6eae64c
-begin	
-	F₁ = u->0
-	p₁ = (m,M,L,g,d,F₁)
-	u0_1 = [-3.0, 0.0, 3,0.2]   # small angle
-	tspan₁ = (0.0, 10.0)
-	x₁,ẋ₁,θ₁,θ̇₁,t₁=sim_cartpend(u0_1,tspan₁,p₁)
-end;
-
-# ╔═╡ f1adfd2d-9e1f-4053-8acb-870b1cd5350e
-x₂,ẋ₂,θ₂,θ̇₂,t₂=sim_cartpend(u0_2,tspan₂,p₂);
-
 # ╔═╡ 47676210-77ed-43be-8bfb-a48b5354330a
 begin 
 	target₃ = [x₃_target; 0.0; π; 0.0]
 	F₃ = u->-K₃*(u-target₃)
 	p₃=(m,M,L,g,d,F₃)
 	tspan₃ = (0.0, 10.0)
-	x₃,ẋ₃,θ₃,θ̇₃,t₃ = sim_cartpend(collect(u0_3),tspan₃,p₃)
 end;
 
-# ╔═╡ e1435146-217f-484a-a09f-656aca108f74
-F_data = similar(x₃);
+# ╔═╡ ca0ad9ee-cd43-445b-818c-035a9e28a48a
+function sim_cartpend(u0::SVector{4}, tspan, p)
+    prob = ODEProblem(cartpend, u0, tspan, p)
+    sol = solve(prob, Vern9(), saveat=0.001)
 
-# ╔═╡ 1155a739-04db-4d7d-90a0-d469c1ecdd6b
-for i in 1:length(x₃)
-	F_data[i] = (-K₃*([x₃[i] ,ẋ₃[i],θ₃[i],θ̇₃[i]]-target₃))[1]
+    t = sol.t
+    X = reduce(hcat, sol.u)  # much faster than sol[i, :]
+    
+    x   = @view X[1, :]
+    ẋ  = @view X[2, :]
+    θ   = @view X[3, :]
+    θ̇  = @view X[4, :]
+    
+    return x, ẋ, θ, θ̇, t
 end
+
+# ╔═╡ 887a1ead-d7b2-42f6-8b44-ab34c43f7e2f
+	x₁,ẋ₁,θ₁,θ̇₁,t₁=sim_cartpend(u0_1,tspan₁,p₁);
+
+# ╔═╡ f1adfd2d-9e1f-4053-8acb-870b1cd5350e
+x₂,ẋ₂,θ₂,θ̇₂,t₂=sim_cartpend(SVector{4}(u0_2),tspan₂,p₂);
+
+# ╔═╡ 3d182b32-adb9-4982-89d7-ed3afaec13a1
+x₃,ẋ₃,θ₃,θ̇₃,t₃ = sim_cartpend(SVector{4}(u0_3),tspan₃,p₃);
 
 # ╔═╡ c7b9947c-8cf2-4c18-942b-1599a9619794
 function plot_data(x, ẋ, θ, θ̇,t)
@@ -223,6 +220,27 @@ function plot_data(x, ẋ, θ, θ̇,t)
     label = ["x" "ẋ" "θ" "θ̇"],
     legend = true)
 end
+
+# ╔═╡ 3b52cb62-0181-4ea7-aa60-957c98c592aa
+function plot_F(x, ẋ, θ, θ̇,t, K, target)
+
+    F_data = similar(x)
+
+    k1, k2, k3, k4 = K
+    t1, t2, t3, t4 = target
+
+    @inbounds for i in eachindex(x)
+        F_data[i] = -( k1*(x[i]   - t1) +
+                       k2*(ẋ[i]  - t2) +
+                       k3*(θ[i]   - t3) +
+                       k4*(θ̇[i]  - t4) )
+    end
+
+    plot(t,F_data,label="F [N]")
+end
+
+# ╔═╡ 66675bc4-1dbf-4d25-9764-1807b229ec02
+plot_F(x₃ ,ẋ₃,θ₃,θ̇₃,t₃,K₃,target₃)
 
 # ╔═╡ b0979471-c10f-459f-9b56-b70447d5db79
 function plot_cart(x,θ,t,t_current)
@@ -258,60 +276,90 @@ plot_cart(x₂,θ₂,t₂,t₂_current)
 plot_cart(x₃,θ₃,t₃,t₃_current)
 
 # ╔═╡ d28d6d09-37c9-4275-af87-649f04ab1508
-function anim_cart(X,θ,t,fps;name = nothing)
-	# Animation
-	# --------------------
-	Px = X .+ L.*sin.(θ)
-	Py = -L.*cos.(θ)
-	w, h = 1, 0.6
-    y = 0.1
-	x_block = X .- w/2
-	Xs =[x_block x_block.+w x_block.+w x_block]
-	ys = [y, y, y+h, y+h]
-	
-	base = plot([-6, 6], [0, 0],lw=3,label=false,xlims=(-6,6),ylims=(-2.5,3),aspect_ratio=:equal) # ground
-	
-	anim = @animate for i in 1:50:length(t)
-		p = deepcopy(base)
-	    # Pendulum position
-	    px = Px[i]
-	    py = Py[i]
-		x = X[i]
-		
-        # Rectangle coordinates (just compute, don’t store Shape)
-        xs =Xs[i,:]
-		plot!(p,xs, ys, seriestype=:shape, label=false)
-		scatter!(p,[x-0.3,x+0.3], [0.1,0.1], markersize=6, label=false,color=:black)
-		
-	    plot!(p,[x, px], [h/2+y, py+h/2+y], lw=3, label=false,color=:black)
-	    scatter!(p,[px], [py+h/2+y], markersize=8, label=false,color=:blue)
-	end
-	if isnothing(name) || isempty(name)
-	    # no filename provided, just save with a default
-	    mp4(anim, fps=fps)
-	else
-	    # save with the given filename
-		mp4(anim, name,fps=fps)
-	end
+function anim_cart(X, θ, t, L, fps; name=nothing)
+
+    w, h = 1.0, 0.6
+    y0 = 0.1
+    pivot_y = y0 + h/2
+
+    anim = @animate for i in 1:50:length(t)
+
+        x  = X[i]
+        θi = θ[i]
+
+        s, c = sincos(θi)
+
+        px = x + L*s
+        py = -L*c
+
+        x_block = x - w/2
+
+        plot(
+            [-6, 6], [0, 0],
+            lw=3,
+            label=false,
+            xlims=(-6,6),
+            ylims=(-2.5,3),
+            aspect_ratio=:equal
+        )
+
+        # cart body
+        plot!(
+            [x_block, x_block+w, x_block+w, x_block],
+            [y0, y0, y0+h, y0+h],
+            seriestype=:shape,
+            label=false,color=:gray
+        )
+
+        # wheels
+        scatter!(
+            [x-0.3, x+0.3],
+            [y0, y0],
+            markersize=6,
+            label=false,color=:black
+        )
+
+        # pendulum rod
+        plot!(
+            [x, px],
+            [pivot_y, py + pivot_y],
+            lw=3,
+            label=false,color=:black
+        )
+
+        # pendulum bob
+        scatter!(
+            [px],
+            [py + pivot_y],
+            markersize=8,
+            label=false,color=:grey
+        )
+    end
+
+    if isnothing(name) || isempty(name)
+        mp4(anim, fps=fps)
+    else
+        mp4(anim, name, fps=fps)
+    end
 end
 
 # ╔═╡ 3575030c-c037-4beb-b162-00cd8ce3578e
 if run_animation₁
-	anim_cart(x₁,θ₁,t₁,40,name="pendu_cart.mp4")
+	anim_cart(x₁,θ₁,t₁,L,40,name="pendu_cart.mp4")
 else 
 	PlutoUI.LocalResource("pendu_cart.mp4")
 end
 
 # ╔═╡ 900cf649-47de-4a9a-80a5-1c0cecccac7d
 if run_animation₂
-	anim_cart(x₂,θ₂,t₂,40,name="pole_place.mp4")
+	anim_cart(x₂,θ₂,t₂,L,40,name="pole_place.mp4")
 else 
 	PlutoUI.LocalResource("pole_place.mp4")
 end
 
 # ╔═╡ 47136fb9-9582-4eee-8922-09bfc5bdd4a2
 if run_animation₃
-	anim_cart(x₃,θ₃,t₃,40,name="optimal_control.mp4")
+	anim_cart(x₃,θ₃,t₃,L,40,name="optimal_control.mp4")
 else
 	PlutoUI.LocalResource("optimal_control.mp4")
 end
@@ -324,12 +372,14 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
 ControlSystemsBase = "~1.20.1"
 OrdinaryDiffEq = "~6.108.0"
 Plots = "~1.41.6"
 PlutoUI = "~0.7.79"
+StaticArrays = "~1.9.16"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -338,7 +388,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.12.5"
 manifest_format = "2.0"
-project_hash = "07fccdf8475d609da0a117ba8f852ebc88aeec6e"
+project_hash = "43812b2d822d86a6835ae9a8a166bf7396a6fc8f"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "f7304359109c768cf32dc5fa2d371565bb63b68a"
@@ -2725,6 +2775,7 @@ version = "1.13.0+0"
 # ╠═4b0ec2a0-0dbb-11f1-bdf1-b12e0ae4e234
 # ╠═ef7603ef-7443-455d-ad61-bcb8c86c59b3
 # ╠═9957936f-0990-422a-8d14-32d9b6eae64c
+# ╠═887a1ead-d7b2-42f6-8b44-ab34c43f7e2f
 # ╟─7a5bd86b-b00b-46c2-b2ee-625b5fef2446
 # ╟─3575030c-c037-4beb-b162-00cd8ce3578e
 # ╠═87d3c999-c354-4eb1-9e57-6a2137ed9230
@@ -2745,18 +2796,19 @@ version = "1.13.0+0"
 # ╟─900cf649-47de-4a9a-80a5-1c0cecccac7d
 # ╠═f8dc507b-15d0-45c2-a8f6-21f7b82ffdc6
 # ╠═47676210-77ed-43be-8bfb-a48b5354330a
+# ╠═3d182b32-adb9-4982-89d7-ed3afaec13a1
 # ╟─548239e5-d628-4888-b0b6-0ea21c0d4b72
 # ╟─c850c798-b181-4307-852a-a192071772bb
 # ╟─3e7672e1-92b6-45b0-9010-c2bd2699eba4
 # ╟─6f74ed45-e706-4876-95c8-78c3d6b3becd
-# ╟─e1435146-217f-484a-a09f-656aca108f74
-# ╟─1155a739-04db-4d7d-90a0-d469c1ecdd6b
+# ╠═66675bc4-1dbf-4d25-9764-1807b229ec02
 # ╟─75b22bc3-72c5-435f-9518-49b75afe7d37
 # ╟─ee477c54-5008-41e4-9064-f04a20de55d9
 # ╟─47136fb9-9582-4eee-8922-09bfc5bdd4a2
 # ╟─51d03650-13e9-4b24-b9ac-21ebe1dca093
 # ╟─ca0ad9ee-cd43-445b-818c-035a9e28a48a
 # ╟─c7b9947c-8cf2-4c18-942b-1599a9619794
+# ╟─3b52cb62-0181-4ea7-aa60-957c98c592aa
 # ╟─b0979471-c10f-459f-9b56-b70447d5db79
 # ╟─d28d6d09-37c9-4275-af87-649f04ab1508
 # ╟─00000000-0000-0000-0000-000000000001
