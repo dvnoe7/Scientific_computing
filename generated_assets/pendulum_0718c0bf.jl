@@ -156,6 +156,15 @@ begin
 	x₂_target = sim_2[5]
 end;
 
+# ╔═╡ c0b2e678-91e2-4f68-b470-f0b4c3a5dd8c
+begin 
+	target₂ = [x₂_target; 0.0; π; 0.0]
+	F₂ = u->-K₂*(u-target₂)
+	p₂=(m,M,L,g,d,F₂)
+	tspan₂ = (0.0, 10.0)
+
+end;
+
 # ╔═╡ c850c798-b181-4307-852a-a192071772bb
 @bind sim_3 confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀","x-target"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15,-5:0.01:5],[0, -0.2, 3.1, 1,4],"Initial condition and targets"))
 
@@ -186,14 +195,8 @@ begin
 	x₁,ẋ₁,θ₁,θ̇₁,t₁=sim_cartpend(u0_1,tspan₁,p₁)
 end;
 
-# ╔═╡ c0b2e678-91e2-4f68-b470-f0b4c3a5dd8c
-begin 
-	target₂ = [x₂_target; 0.0; π; 0.0]
-	F₂ = u->-K₂*(u-target₂)
-	p₂=(m,M,L,g,d,F₂)
-	tspan₂ = (0.0, 10.0)
-	x₂,ẋ₂,θ₂,θ̇₂,t₂=sim_cartpend(u0_2,tspan₂,p₂)
-end;
+# ╔═╡ f1adfd2d-9e1f-4053-8acb-870b1cd5350e
+x₂,ẋ₂,θ₂,θ̇₂,t₂=sim_cartpend(u0_2,tspan₂,p₂);
 
 # ╔═╡ 47676210-77ed-43be-8bfb-a48b5354330a
 begin 
@@ -2732,6 +2735,7 @@ version = "1.13.0+0"
 # ╠═0c98e1fa-24bc-49ef-846d-c9e0c8744bad
 # ╠═33ebcd3c-8778-424e-863e-d5713cee131e
 # ╠═c0b2e678-91e2-4f68-b470-f0b4c3a5dd8c
+# ╠═f1adfd2d-9e1f-4053-8acb-870b1cd5350e
 # ╟─1f46cc17-9488-4cbd-9f0c-d081a5e6a6d2
 # ╟─0a45bd2b-76cb-4e1e-b391-e362ec22c3d9
 # ╟─c0d998a3-fbfa-4500-a3a1-3ff1c22c6ce8
@@ -2744,16 +2748,16 @@ version = "1.13.0+0"
 # ╟─548239e5-d628-4888-b0b6-0ea21c0d4b72
 # ╟─c850c798-b181-4307-852a-a192071772bb
 # ╟─3e7672e1-92b6-45b0-9010-c2bd2699eba4
-# ╠═6f74ed45-e706-4876-95c8-78c3d6b3becd
+# ╟─6f74ed45-e706-4876-95c8-78c3d6b3becd
 # ╟─e1435146-217f-484a-a09f-656aca108f74
 # ╟─1155a739-04db-4d7d-90a0-d469c1ecdd6b
 # ╟─75b22bc3-72c5-435f-9518-49b75afe7d37
 # ╟─ee477c54-5008-41e4-9064-f04a20de55d9
-# ╠═47136fb9-9582-4eee-8922-09bfc5bdd4a2
+# ╟─47136fb9-9582-4eee-8922-09bfc5bdd4a2
 # ╟─51d03650-13e9-4b24-b9ac-21ebe1dca093
 # ╟─ca0ad9ee-cd43-445b-818c-035a9e28a48a
 # ╟─c7b9947c-8cf2-4c18-942b-1599a9619794
 # ╟─b0979471-c10f-459f-9b56-b70447d5db79
-# ╠═d28d6d09-37c9-4275-af87-649f04ab1508
+# ╟─d28d6d09-37c9-4275-af87-649f04ab1508
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
