@@ -95,18 +95,24 @@ rank(ctrb(A,B))
 
 # ╔═╡ 0c98e1fa-24bc-49ef-846d-c9e0c8744bad
 begin
-		eigs = [-1.1; -1.2; -1.3; -1.4] 
+		eigs = [-0.6; -0.7; -0.8; -0.9] 
 		K₂ = place(A,B,eigs)
 end
 
 # ╔═╡ 33ebcd3c-8778-424e-863e-d5713cee131e
 eigvals(A-B*K₂)
 
-# ╔═╡ c0d998a3-fbfa-4500-a3a1-3ff1c22c6ce8
-@bind i₂ Slider(1:101)
+# ╔═╡ 3a129d05-51d1-4140-8175-e9af607dee8d
+@bindname x₂_target confirm(Slider(-5:0.1:5,default = 4 ,show_value=true))
 
-# ╔═╡ 9ac76be8-2e3a-4f19-bef0-02bfa01014bf
-t₂_current = round(0.1*(i₂-1),digits=2)
+# ╔═╡ c0b2e678-91e2-4f68-b470-f0b4c3a5dd8c
+begin 
+	target₂ = [x₂_target; 0.0; π; 0.0]
+	F₂_func = u->-K₂*(u-target₂)
+	p₂=(m,M,L,g,d,F₂_func)
+	tspan₂ = (0.0, 10.0)
+
+end;
 
 # ╔═╡ 02f3af5a-1384-4b04-9fc3-0afe4e724c00
 @bindname run_animation₂ CheckBox(default=true)
@@ -118,15 +124,20 @@ begin
 		 0 1 0 0
 		 0 0 10 0
 		 0 0 0 100]
-	R = 0.001
+	R = 0.01
 	K₃ = lqr(A,B,Q,R)
 end;
 
-# ╔═╡ 3e7672e1-92b6-45b0-9010-c2bd2699eba4
-@bind i₃ Slider(1:101)
+# ╔═╡ 0dd43299-bb51-4d18-9ad9-2951c7f2b982
+@bindname x₃_target confirm(Slider(-5:0.1:5,default = 4 ,show_value=true))
 
-# ╔═╡ 6f74ed45-e706-4876-95c8-78c3d6b3becd
-t₃_current = round(0.1*(i₃-1),digits=2)
+# ╔═╡ 47676210-77ed-43be-8bfb-a48b5354330a
+begin 
+	target₃ = [x₃_target, 0.0, π, 0.0]
+	F₃_func = u->-K₃*(u-target₃)
+	p₃=(m,M,L,g,d,F₃_func)
+	tspan₃ = (0.0, 10.0)
+end;
 
 # ╔═╡ ee477c54-5008-41e4-9064-f04a20de55d9
 @bindname run_animation₃ CheckBox(default=true)
@@ -153,44 +164,21 @@ function multislider(names,ranges,defaults,title)
 end
 
 # ╔═╡ 0a45bd2b-76cb-4e1e-b391-e362ec22c3d9
-@bind sim_2 confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀","x-target"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15,-5:0.01:5],[0, -0.2, 3.1, 1,4],"Initial condition and targets"))
+@bind sim_2 confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15],[0, -0.2, 3.1, 1,4],"Initial condition and targets"))
 
 # ╔═╡ 1f46cc17-9488-4cbd-9f0c-d081a5e6a6d2
-begin
-	u0_2 = collect(sim_2[1:4])
-	x₂_target = sim_2[5]
-end;
-
-# ╔═╡ c0b2e678-91e2-4f68-b470-f0b4c3a5dd8c
-begin 
-	target₂ = [x₂_target; 0.0; π; 0.0]
-	F₂ = u->-K₂*(u-target₂)
-	p₂=(m,M,L,g,d,F₂)
-	tspan₂ = (0.0, 10.0)
-
-end;
+u0_2 = collect(sim_2);
 
 # ╔═╡ c850c798-b181-4307-852a-a192071772bb
-@bind sim_3 confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀","x-target"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15,-5:0.01:5],[0, -0.2, 3.1, 1,4],"Initial condition and targets"))
+@bind sim_3 confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15],[0, -0.2, 3.1, 1,4],"Initial condition and targets"))
 
 # ╔═╡ 548239e5-d628-4888-b0b6-0ea21c0d4b72
-begin
-	u0_3 = collect(sim_3[1:4])
-	x₃_target = sim_3[5]
-end;
-
-# ╔═╡ 47676210-77ed-43be-8bfb-a48b5354330a
-begin 
-	target₃ = [x₃_target; 0.0; π; 0.0]
-	F₃ = u->-K₃*(u-target₃)
-	p₃=(m,M,L,g,d,F₃)
-	tspan₃ = (0.0, 10.0)
-end;
+u0_3 = collect(sim_3);
 
 # ╔═╡ ca0ad9ee-cd43-445b-818c-035a9e28a48a
 function sim_cartpend(u0::SVector{4}, tspan, p)
     prob = ODEProblem(cartpend, u0, tspan, p)
-    sol = solve(prob, Vern9(), saveat=0.001)
+    sol = solve(prob, Vern9(), saveat=0.01)
 
     t = sol.t
     X = reduce(hcat, sol.u)  # much faster than sol[i, :]
@@ -199,74 +187,123 @@ function sim_cartpend(u0::SVector{4}, tspan, p)
     ẋ  = @view X[2, :]
     θ   = @view X[3, :]
     θ̇  = @view X[4, :]
-    
-    return x, ẋ, θ, θ̇, t
+
+	# Compute F along trajectory
+    F_func = p[6]  # unpack the function
+    F = [F_func(@SVector [x[i], ẋ[i], θ[i], θ̇[i]])[1] for i in 1:length(t)]
+	
+    return x, ẋ, θ, θ̇, t, F
 end
 
 # ╔═╡ 887a1ead-d7b2-42f6-8b44-ab34c43f7e2f
 	x₁,ẋ₁,θ₁,θ̇₁,t₁=sim_cartpend(u0_1,tspan₁,p₁);
 
 # ╔═╡ f1adfd2d-9e1f-4053-8acb-870b1cd5350e
-x₂,ẋ₂,θ₂,θ̇₂,t₂=sim_cartpend(SVector{4}(u0_2),tspan₂,p₂);
+x₂,ẋ₂,θ₂,θ̇₂,t₂,F₂=sim_cartpend(SVector{4}(u0_2),tspan₂,p₂);
+
+# ╔═╡ c0d998a3-fbfa-4500-a3a1-3ff1c22c6ce8
+@bind i₂ Slider(1:length(t₂)/10+1)
+
+# ╔═╡ 9ac76be8-2e3a-4f19-bef0-02bfa01014bf
+t₂_current = round(0.1*(i₂-1),digits=2)
+
+# ╔═╡ bd931e56-c6ab-4f45-8f26-ca4748d01a5d
+plot(t₂,F₂,label="Optimal force",ylabel="F [N]",xlabel="Time [s]",ylim=[-50,50])
 
 # ╔═╡ 3d182b32-adb9-4982-89d7-ed3afaec13a1
-x₃,ẋ₃,θ₃,θ̇₃,t₃ = sim_cartpend(SVector{4}(u0_3),tspan₃,p₃);
+x₃,ẋ₃,θ₃,θ̇₃,t₃,F₃ = sim_cartpend(SVector{4}(u0_3),tspan₃,p₃);
 
-# ╔═╡ c7b9947c-8cf2-4c18-942b-1599a9619794
-function plot_data(x, ẋ, θ, θ̇,t)
-	plot(t, [x ẋ θ θ̇],
-    layout = (2,2),
-    xlabel = "Time (s)",
-    label = ["x" "ẋ" "θ" "θ̇"],
-    legend = true)
-end
+# ╔═╡ 3e7672e1-92b6-45b0-9010-c2bd2699eba4
+@bind i₃ Slider(1:length(t₃)/10+1)
 
-# ╔═╡ 3b52cb62-0181-4ea7-aa60-957c98c592aa
-function plot_F(x, ẋ, θ, θ̇,t, K, target)
-
-    F_data = similar(x)
-
-    k1, k2, k3, k4 = K
-    t1, t2, t3, t4 = target
-
-    @inbounds for i in eachindex(x)
-        F_data[i] = -( k1*(x[i]   - t1) +
-                       k2*(ẋ[i]  - t2) +
-                       k3*(θ[i]   - t3) +
-                       k4*(θ̇[i]  - t4) )
-    end
-
-    plot(t,F_data,label="F [N]")
-end
+# ╔═╡ 6f74ed45-e706-4876-95c8-78c3d6b3becd
+t₃_current = round(0.1*(i₃-1),digits=2)
 
 # ╔═╡ 66675bc4-1dbf-4d25-9764-1807b229ec02
-plot_F(x₃ ,ẋ₃,θ₃,θ̇₃,t₃,K₃,target₃)
+plot(t₃,F₃,label="Optimal force",ylabel="F [N]",xlabel="Time [s]",ylim=[-50,50])
+
+# ╔═╡ c7b9947c-8cf2-4c18-942b-1599a9619794
+function plot_data(x, ẋ, θ, θ̇, t, target)
+
+    p = plot(t, [x ẋ θ θ̇],
+        layout = (2,2),
+        xlabel = "Time (s)",
+        label = ["x" "ẋ" "θ" "θ̇"],
+        legend =:bottomright)
+
+    # Add horizontal target lines
+    for i in 1:4
+        hline!(p[i], [target[i]],
+               linestyle = :dash,
+               label = "target",linewidth=2)
+    end
+
+    return p
+end
+
+# ╔═╡ 491e9cda-626d-493b-a7ed-5ad770e8ffc4
+plot_data(x₂, ẋ₂, θ₂, θ̇₂,t₂,target₂)
+
+# ╔═╡ aadc058a-008a-44ad-abe7-6344d1ab6135
+plot_data(x₃, ẋ₃, θ₃, θ̇₃,t₃,target₃)
 
 # ╔═╡ b0979471-c10f-459f-9b56-b70447d5db79
-function plot_cart(x,θ,t,t_current)
-	i = Int(t_current÷0.001)+1;
-	# Pendulum position
-	px = x[i] + L*sin(θ[i])
-	py = -L*cos(θ[i])
-			
-			
-	w, h = 1, 0.6
-	x_block, y = x[i]-w/2, 0.1
-	rect = Shape([x_block, x_block+w, x_block+w, x_block],[y, y, y+h, y+h])
-			
-	plot([-6, 6], [0, 0],
-	    lw=3,
-	    label=false,
-	    xlims=(-6,6),
-	    ylims=(-2.5,3),
-	    aspect_ratio=:equal
-		   ) # ground
-			
-	plot!(rect,label=false)
-	plot!([x[i]-0.3,x[i]+0.3], [0.1,0.1], seriestype=:scatter, markersize=6, label=false,color=:black)
-			
-	plot!([x[i], px], [h/2+y, py+h/2+y], lw=3, label=false,color=:black)
-	plot!([px], [py+h/2+y], seriestype=:scatter, markersize=8, label=false,color=:blue)
+function plot_cart(X,θ,t,t_current)
+	i = Int(t_current÷0.01)+1;
+    w, h = 1.0, 0.6
+    y0 = 0.1
+    pivot_y = y0 + h/2
+    x  = X[i]
+    θi = θ[i]
+
+    s, c = sincos(θi)
+
+    px = x + L*s
+    py = -L*c
+
+    x_block = x - w/2
+
+    plot(
+        [-6, 6], [0, 0],
+        lw=3,
+        label=false,
+        xlims=(-6,6),
+        ylims=(-2.5,3),
+        aspect_ratio=:equal
+        )
+
+        # cart body
+    plot!(
+        [x_block, x_block+w, x_block+w, x_block],
+        [y0, y0, y0+h, y0+h],
+        seriestype=:shape,
+        label=false,color=:gray
+        )
+
+    # wheels
+    scatter!(
+        [x-0.3, x+0.3],
+        [y0, y0],
+        markersize=6,
+        label=false,color=:black
+        )
+
+    # pendulum rod
+    plot!(
+        [x, px],
+        [pivot_y, py + pivot_y],
+        lw=3,
+        label=false,color=:black
+        )
+
+    # pendulum bob
+    scatter!(
+        [px],
+        [py + pivot_y],
+        markersize=8,
+        label=false,color=:grey
+        )
+	
 end
 
 # ╔═╡ c0d99293-7cd3-41f2-937d-2d7b56447512
@@ -282,7 +319,7 @@ function anim_cart(X, θ, t, L, fps; name=nothing)
     y0 = 0.1
     pivot_y = y0 + h/2
 
-    anim = @animate for i in 1:50:length(t)
+    anim = @animate for i in 1:5:length(t)
 
         x  = X[i]
         θi = θ[i]
@@ -359,7 +396,7 @@ end
 
 # ╔═╡ 47136fb9-9582-4eee-8922-09bfc5bdd4a2
 if run_animation₃
-	anim_cart(x₃,θ₃,t₃,L,40,name="optimal_control.mp4")
+	anim_cart(x₃,θ₃,t₃,L,40)
 else
 	PlutoUI.LocalResource("optimal_control.mp4")
 end
@@ -2789,26 +2826,30 @@ version = "1.13.0+0"
 # ╠═f1adfd2d-9e1f-4053-8acb-870b1cd5350e
 # ╟─1f46cc17-9488-4cbd-9f0c-d081a5e6a6d2
 # ╟─0a45bd2b-76cb-4e1e-b391-e362ec22c3d9
+# ╟─3a129d05-51d1-4140-8175-e9af607dee8d
 # ╟─c0d998a3-fbfa-4500-a3a1-3ff1c22c6ce8
 # ╟─9ac76be8-2e3a-4f19-bef0-02bfa01014bf
 # ╟─c0d99293-7cd3-41f2-937d-2d7b56447512
 # ╟─02f3af5a-1384-4b04-9fc3-0afe4e724c00
 # ╟─900cf649-47de-4a9a-80a5-1c0cecccac7d
+# ╟─491e9cda-626d-493b-a7ed-5ad770e8ffc4
+# ╟─bd931e56-c6ab-4f45-8f26-ca4748d01a5d
 # ╠═f8dc507b-15d0-45c2-a8f6-21f7b82ffdc6
 # ╠═47676210-77ed-43be-8bfb-a48b5354330a
-# ╠═3d182b32-adb9-4982-89d7-ed3afaec13a1
 # ╟─548239e5-d628-4888-b0b6-0ea21c0d4b72
+# ╠═3d182b32-adb9-4982-89d7-ed3afaec13a1
 # ╟─c850c798-b181-4307-852a-a192071772bb
+# ╟─0dd43299-bb51-4d18-9ad9-2951c7f2b982
 # ╟─3e7672e1-92b6-45b0-9010-c2bd2699eba4
 # ╟─6f74ed45-e706-4876-95c8-78c3d6b3becd
-# ╠═66675bc4-1dbf-4d25-9764-1807b229ec02
 # ╟─75b22bc3-72c5-435f-9518-49b75afe7d37
 # ╟─ee477c54-5008-41e4-9064-f04a20de55d9
 # ╟─47136fb9-9582-4eee-8922-09bfc5bdd4a2
+# ╟─aadc058a-008a-44ad-abe7-6344d1ab6135
+# ╟─66675bc4-1dbf-4d25-9764-1807b229ec02
 # ╟─51d03650-13e9-4b24-b9ac-21ebe1dca093
 # ╟─ca0ad9ee-cd43-445b-818c-035a9e28a48a
 # ╟─c7b9947c-8cf2-4c18-942b-1599a9619794
-# ╟─3b52cb62-0181-4ea7-aa60-957c98c592aa
 # ╟─b0979471-c10f-459f-9b56-b70447d5db79
 # ╟─d28d6d09-37c9-4275-af87-649f04ab1508
 # ╟─00000000-0000-0000-0000-000000000001

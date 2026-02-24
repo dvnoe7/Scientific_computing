@@ -26,7 +26,7 @@ layout: "layout.jlhtml"
 <div id="title" class="banner">
     <h1>Julia: <strong>A Fresh Approach to Computing</strong></h1>
 </div>
-<!-- <img src="$(root_url)/assets/MIT_logo.svg" class="logo"> -->
+<!-- <img src="$(root_url)/assets/HAN_logo.png" class="logo"> -->
 
 <blockquote class="banner">
     <p>This class uses revolutionary programmable interactivity to combine material from three fields creating an engaging, efficient learning solution to prepare students to be sophisticated and intuitive thinkers, programmers, and solution providers for the modern interconnected online world.</p>

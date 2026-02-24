@@ -148,7 +148,7 @@ $(pluto_head)
                 </div>
                 <div class="logos">
                     <picture title="Massachusetts Institute of Technology">
-                        <img src="$(root_url)/assets/MIT_logo.svg">
+                        <img src="$(root_url)/assets/HAN_logo.png">
                     </picture>
                     <picture title="Julia Programming Language">
                         <source srcset="$(root_url)/assets/julia-logo-dark.svg" media="(prefers-color-scheme: dark)" />
