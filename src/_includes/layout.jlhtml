@@ -71,7 +71,7 @@ $(pluto_head)
                     <h2><span>Make mathematics your playground!</span></h2>
                 </div>
                 <div class="authors">
-                    by <a href="https://github.com/dvnoe7">Dani van Noesel</a>, <a href="http://sistemas.fciencias.unam.mx/~dsanders/">David P. Sanders</a> &amp; <a href="https://people.csail.mit.edu/cel/">Charles E. Leiserson</a>
+                    by <a href="https://github.com/dvnoe7">Dani van Noesel</a>
                 </div>
             </li>
             <li>
@@ -135,7 +135,7 @@ $(pluto_head)
                 <li><hr></li>
             <li class="sidebar-about">
                 <div class="logos">
-                    <picture title="Massachusetts Institute of Technology">
+                    <picture title="HAN university of applied sciences">
                         <img src="$(root_url)/assets/HAN_logo.png">
                     </picture>
                     <picture title="Julia Programming Language">
