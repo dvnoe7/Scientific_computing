@@ -25,7 +25,19 @@ macro bind(def, element)
 end
 
 # ╔═╡ d5fbed1e-cc38-4da1-836c-e3933b7138bc
-using ControlSystemsBase,LinearAlgebra,PlutoUI,OrdinaryDiffEq ,Plots,StaticArrays
+using ControlSystemsBase,LinearAlgebra,PlutoUI,OrdinaryDiffEq ,Plots,StaticArrays,PlutoTeachingTools,LaTeXStrings
+
+# ╔═╡ 84ceca2c-9fc2-42f5-8e08-0283511fbf48
+TableOfContents()
+
+# ╔═╡ e801fdb8-5fa7-4f50-b582-12d2d1f2b269
+md"""
+# Control of an Inverted Pendulum on a Cart
+
+In this notebook, we study the dynamics and control of an inverted pendulum mounted on a cart.  
+We will simulate the system **without control**, implement **state-feedback control** using pole placement, and optimize the control using **Linear Quadratic Regulator (LQR)**.  
+Interactive sliders allow you to experiment with initial conditions and target positions.
+"""
 
 # ╔═╡ 4b0ec2a0-0dbb-11f1-bdf1-b12e0ae4e234
 function cartpend(u::SVector{4}, p, t)
@@ -35,8 +47,7 @@ function cartpend(u::SVector{4}, p, t)
     # unpack state (zero allocation)
     x, ẋ, θ, θ̇ = u
 
-    F = F_func(u)[1]
-
+    F = F_func(u)
     s, c = sincos(θ)           # faster than separate sin + cos
     D = m*L^2*(M + m*(1 - c^2))
     invD = inv(D)              # compute once
@@ -62,16 +73,57 @@ begin
 end;
 
 
+# ╔═╡ 3d51e4b1-94f3-43ed-8288-a7e321f98138
+md"""
+## 1. Simulation without Control
+
+We first simulate the pendulum-cart system with no applied control force.  
+This helps visualize the natural instability of the inverted pendulum.
+"""
+
 # ╔═╡ 9957936f-0990-422a-8d14-32d9b6eae64c
 begin	
 	F₁ = u->0
 	p₁ = (m,M,L,g,d,F₁)
-	u0_1 = SA_F64[-3.0, 0.0, 3,0.2]   # small angle
+	u0_1 = SA_F64[-3.0, 0.0, 3.0,0.2]   # small angle
 	tspan₁ = (0.0, 10.0)
 end;
 
 # ╔═╡ 7a5bd86b-b00b-46c2-b2ee-625b5fef2446
 @bindname run_animation₁ CheckBox(default=true)
+
+# ╔═╡ 80b632be-90cd-430f-9bd1-193f476a3e69
+md"""
+## 2. Simulation with Control
+
+Next, we implement state-feedback control to stabilize the pendulum:
+
+1. **Linearization**: Around the upright position $θ = \pi$  
+2. **Pole Placement**: Design a feedback gain $K$ to place the closed-loop poles at desired locations  
+3. **Optimal Control (LQR)**: Design a controller that minimizes a cost function over states and control inputs
+"""
+
+# ╔═╡ 8534b873-04af-4b07-a12a-811806aa04c4
+md"""
+### 2.1 Linearized Dynamics
+
+We linearize the nonlinear dynamics around the upright equilibrium.  
+
+-  $\dot{\mathbf{x}}$ :  cart position
+-  $θ$: pendulum angle (upright at $π$)  
+-  $ẋ$, $\dot{\mathbf{\theta}}$: velocities
+
+The linearized system can be written in state-space form:
+
+$\dot{\mathbf{x}} = A \mathbf{x} + B u$
+
+where `A` is the system matrix and `B` is the input matrix.
+"""
+
+# ╔═╡ 4e89d372-3bfe-4231-88b2-9bec8687be7e
+md"""
+Lineairizing the dynamcis around the Fixed point θ = π/2. By taking the Jacobuian of the dynamics
+"""
 
 # ╔═╡ 87d3c999-c354-4eb1-9e57-6a2137ed9230
 s = 1 # pendulum up (s=1)
@@ -87,11 +139,48 @@ B = [0; 1/M; 0; s*1/(M*L)];
 
 # ╔═╡ 5b9c2410-6521-4b83-b4b9-e3c0300185d7
 md"""
-Checking for full controllability by checking the rank of the control matrix
+### 2.2 Controllability
+
+Before designing a controller, it is important to check if the system is **fully controllable**.  
+
+A system is controllable if, starting from any initial state $\mathbf{x}_0$, we can drive the system to any desired state $\mathbf{x}_f$ in finite time using an appropriate input $u(t)$.  
+
+For a **Dynamical System**:
+
+$\dot{\mathbf{x}} = A \mathbf{x} + B u$
+
+the **controllability matrix** is defined as:
+
+$\mathcal{C} = \begin{bmatrix} B & AB & A^2 B & \dots & A^{n-1}B \end{bmatrix}$
+
+where $n$ is the number of states.  
+
+- If $\text{rank}(\mathcal{C}) = n$, the system is **fully controllable**  
+- Otherwise, some states cannot be influenced by the input
+
+> **In our case**, $A \in \mathbb{R}^{4\times 4}$ and $B \in \mathbb{R}^{4\times 1}$.  
+> We compute:
+
+$\text{rank}(\mathcal{C}) = 4$
+
+which confirms that the pendulum-cart system is **fully controllable**.  
+
+This means we can place the closed-loop poles **anywhere in the complex plane** using state-feedback, allowing for stable control.
 """
 
 # ╔═╡ 50c38bba-8ac6-44a3-9b2b-b2d944216df9
 rank(ctrb(A,B))
+
+# ╔═╡ 0d044a74-9b73-4605-a885-e2e79e2fea60
+md"""
+### 2.3 Pole Placement
+
+We design a **state-feedback controller** using pole placement.  
+
+- Choose desired closed-loop eigenvalues  
+- Compute feedback gain `K` such that $u = -K(x - x_{target})$  
+- Simulate the system with the controller to verify stabilization
+"""
 
 # ╔═╡ 0c98e1fa-24bc-49ef-846d-c9e0c8744bad
 begin
@@ -108,7 +197,7 @@ eigvals(A-B*K₂)
 # ╔═╡ c0b2e678-91e2-4f68-b470-f0b4c3a5dd8c
 begin 
 	target₂ = [x₂_target; 0.0; π; 0.0]
-	F₂_func = u->-K₂*(u-target₂)
+	F₂_func = u -> first(-K₂*(u - target₂))
 	p₂=(m,M,L,g,d,F₂_func)
 	tspan₂ = (0.0, 10.0)
 
@@ -116,6 +205,20 @@ end;
 
 # ╔═╡ 02f3af5a-1384-4b04-9fc3-0afe4e724c00
 @bindname run_animation₂ CheckBox(default=true)
+
+# ╔═╡ f1a763a1-7be7-4584-8607-cc35435fade5
+md"""
+### 2.4 Optimal Control with LQR
+
+We can further optimize control performance using **Linear Quadratic Regulator (LQR)**:
+
+- Define weighting matrices $Q$ (state) and $R$ (control effort)  
+- Compute optimal gain `K` to minimize the cost:
+
+$J = \int_0^\infty (\mathbf{x}^\top Q \mathbf{x} + u^\top R u)\, dt$
+
+- LQR balances **state regulation** and **control effort**
+"""
 
 # ╔═╡ f8dc507b-15d0-45c2-a8f6-21f7b82ffdc6
 begin
@@ -134,13 +237,67 @@ end;
 # ╔═╡ 47676210-77ed-43be-8bfb-a48b5354330a
 begin 
 	target₃ = [x₃_target, 0.0, π, 0.0]
-	F₃_func = u->-K₃*(u-target₃)
+	F₃_func = u->first(-K₃*(u-target₃))
 	p₃=(m,M,L,g,d,F₃_func)
 	tspan₃ = (0.0, 10.0)
 end;
 
 # ╔═╡ ee477c54-5008-41e4-9064-f04a20de55d9
 @bindname run_animation₃ CheckBox(default=true)
+
+# ╔═╡ 3174f4ff-645e-485f-932a-f7bbac00f439
+md"""
+## 3. Control with Limited Observation
+
+In real-world systems, **not all states are directly measurable**.  
+
+We discuss strategies to handle **limited observation** scenarios, such as:
+
+- Using **Kalman filters** for noisy measurements 
+- Combining observer with state-feedback control
+
+"""
+
+# ╔═╡ c4c86554-6797-445e-a562-ba3c253d07d4
+md"""
+### 3.1 Observability
+
+In real-world systems, we often **cannot measure all the states** of a system directly.  
+
+A system is **observable** if, by measuring the outputs over time, we can determine the **full internal state** $\mathbf{x}(t)$.  
+
+For a dynamical system:
+
+$\dot{\mathbf{x}} = A \mathbf{x} + B u$
+$\quad y = C \mathbf{x}$
+
+the **observability matrix** is defined as:
+
+$\mathcal{O} = \begin{bmatrix} C \\ CA \\ CA^2 \\ \vdots \\ CA^{n-1} \end{bmatrix}$
+
+where $n$ is the number of states.  
+
+- If $\text{rank}(\mathcal{O}) = n$, the system is **fully observable**  
+- Otherwise, some states cannot be inferred from the measurements
+
+> **In our case it is only possible to measure the position of the cart**
+> By computing:
+
+$\text{rank}(\mathcal{O}) = 4$
+
+we can confirm that the system is **fully observable**, meaning all states can be reconstructed from the measured outputs.
+
+This is important when designing **observers**, such as:
+
+- **Kalman filters** when measurements are noisy  
+
+Once the states are estimated, we can combine the observer with our state-feedback controller to stabilize the system even under limited observation.
+"""
+
+# ╔═╡ 7bfc29de-3d8a-4b7a-a5b4-10cbdebcfa60
+md"""
+### 3.2 Kalman filter
+"""
 
 # ╔═╡ 51d03650-13e9-4b24-b9ac-21ebe1dca093
 function multislider(names,ranges,defaults,title)
@@ -164,13 +321,13 @@ function multislider(names,ranges,defaults,title)
 end
 
 # ╔═╡ 0a45bd2b-76cb-4e1e-b391-e362ec22c3d9
-@bind sim_2 confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15],[0, -0.2, 3.1, 1,4],"Initial condition and targets"))
+aside(@bind sim_2 confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15],[0, -0.2, 3.1, 1,4],"Initial condition and targets"));v_offset=250)
 
 # ╔═╡ 1f46cc17-9488-4cbd-9f0c-d081a5e6a6d2
 u0_2 = collect(sim_2);
 
 # ╔═╡ c850c798-b181-4307-852a-a192071772bb
-@bind sim_3 confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15],[0, -0.2, 3.1, 1,4],"Initial condition and targets"))
+aside(@bind sim_3 confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15],[0, -0.2, 3.1, 1,4],"Initial condition and targets"));v_offset=250)
 
 # ╔═╡ 548239e5-d628-4888-b0b6-0ea21c0d4b72
 u0_3 = collect(sim_3);
@@ -228,7 +385,7 @@ function plot_data(x, t, target)
     p = plot(t, x,
         layout = (2,2),
         xlabel = "Time (s)",
-        label = ["x" "ẋ" "θ" "θ̇"],
+        label = ["x" "ẋ" "θ" L"\dot{\mathbf{\theta}}"],
         legend =:bottomright)
 
     # Add horizontal target lines
@@ -405,17 +562,22 @@ end
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 ControlSystemsBase = "aaaaaaaa-a6ca-5380-bf3e-84a91bcd477e"
+LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+PlutoTeachingTools = "661c6b06-c737-4d37-b85c-46df65de6f69"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
-ControlSystemsBase = "~1.20.1"
+ControlSystemsBase = "~1.20.2"
+LaTeXStrings = "~1.4.0"
+OrdinaryDiffEq = "~6.108.0"
 Plots = "~1.41.6"
+PlutoTeachingTools = "~0.4.7"
 PlutoUI = "~0.7.79"
-StaticArrays = "~1.9.16"
+StaticArrays = "~1.9.17"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -424,7 +586,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.12.5"
 manifest_format = "2.0"
-project_hash = "868a41f41dfc7983150765d13422862b98ec7e67"
+project_hash = "27fe0e819fd59c21b2b53d7f105837c2f6f87dc5"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "f7304359109c768cf32dc5fa2d371565bb63b68a"
@@ -1990,6 +2152,12 @@ version = "1.41.6"
     ImageInTerminal = "d8c32880-2388-543b-8c61-d9f865259254"
     Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
+[[deps.PlutoTeachingTools]]
+deps = ["Downloads", "HypertextLiteral", "Latexify", "Markdown", "PlutoUI"]
+git-tree-sha1 = "90b41ced6bacd8c01bd05da8aed35c5458891749"
+uuid = "661c6b06-c737-4d37-b85c-46df65de6f69"
+version = "0.4.7"
+
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Downloads", "FixedPointNumbers", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "Logging", "MIMEs", "Markdown", "Random", "Reexport", "URIs", "UUIDs"]
 git-tree-sha1 = "3ac7038a98ef6977d44adeadc73cc6f596c08109"
@@ -2808,17 +2976,24 @@ version = "1.13.0+0"
 
 # ╔═╡ Cell order:
 # ╠═d5fbed1e-cc38-4da1-836c-e3933b7138bc
+# ╟─84ceca2c-9fc2-42f5-8e08-0283511fbf48
+# ╟─e801fdb8-5fa7-4f50-b582-12d2d1f2b269
 # ╠═4b0ec2a0-0dbb-11f1-bdf1-b12e0ae4e234
 # ╠═ef7603ef-7443-455d-ad61-bcb8c86c59b3
+# ╟─3d51e4b1-94f3-43ed-8288-a7e321f98138
 # ╠═9957936f-0990-422a-8d14-32d9b6eae64c
 # ╠═887a1ead-d7b2-42f6-8b44-ab34c43f7e2f
 # ╟─7a5bd86b-b00b-46c2-b2ee-625b5fef2446
 # ╟─3575030c-c037-4beb-b162-00cd8ce3578e
+# ╟─80b632be-90cd-430f-9bd1-193f476a3e69
+# ╠═8534b873-04af-4b07-a12a-811806aa04c4
+# ╟─4e89d372-3bfe-4231-88b2-9bec8687be7e
 # ╠═87d3c999-c354-4eb1-9e57-6a2137ed9230
 # ╠═36650a43-5d50-44fe-9348-70f395e4368b
 # ╠═e0623f48-4da6-4ca9-bc83-e3c443c8441c
 # ╟─5b9c2410-6521-4b83-b4b9-e3c0300185d7
 # ╠═50c38bba-8ac6-44a3-9b2b-b2d944216df9
+# ╟─0d044a74-9b73-4605-a885-e2e79e2fea60
 # ╠═0c98e1fa-24bc-49ef-846d-c9e0c8744bad
 # ╠═33ebcd3c-8778-424e-863e-d5713cee131e
 # ╠═c0b2e678-91e2-4f68-b470-f0b4c3a5dd8c
@@ -2826,17 +3001,18 @@ version = "1.13.0+0"
 # ╟─1f46cc17-9488-4cbd-9f0c-d081a5e6a6d2
 # ╟─0a45bd2b-76cb-4e1e-b391-e362ec22c3d9
 # ╟─3a129d05-51d1-4140-8175-e9af607dee8d
-# ╟─c0d998a3-fbfa-4500-a3a1-3ff1c22c6ce8
 # ╟─9ac76be8-2e3a-4f19-bef0-02bfa01014bf
+# ╟─c0d998a3-fbfa-4500-a3a1-3ff1c22c6ce8
 # ╟─c0d99293-7cd3-41f2-937d-2d7b56447512
 # ╟─02f3af5a-1384-4b04-9fc3-0afe4e724c00
 # ╟─900cf649-47de-4a9a-80a5-1c0cecccac7d
 # ╟─491e9cda-626d-493b-a7ed-5ad770e8ffc4
 # ╟─bd931e56-c6ab-4f45-8f26-ca4748d01a5d
+# ╟─f1a763a1-7be7-4584-8607-cc35435fade5
 # ╠═f8dc507b-15d0-45c2-a8f6-21f7b82ffdc6
 # ╠═47676210-77ed-43be-8bfb-a48b5354330a
-# ╟─548239e5-d628-4888-b0b6-0ea21c0d4b72
 # ╠═3d182b32-adb9-4982-89d7-ed3afaec13a1
+# ╟─548239e5-d628-4888-b0b6-0ea21c0d4b72
 # ╟─c850c798-b181-4307-852a-a192071772bb
 # ╟─0dd43299-bb51-4d18-9ad9-2951c7f2b982
 # ╟─3e7672e1-92b6-45b0-9010-c2bd2699eba4
@@ -2846,6 +3022,9 @@ version = "1.13.0+0"
 # ╟─47136fb9-9582-4eee-8922-09bfc5bdd4a2
 # ╟─aadc058a-008a-44ad-abe7-6344d1ab6135
 # ╟─66675bc4-1dbf-4d25-9764-1807b229ec02
+# ╟─3174f4ff-645e-485f-932a-f7bbac00f439
+# ╟─c4c86554-6797-445e-a562-ba3c253d07d4
+# ╟─7bfc29de-3d8a-4b7a-a5b4-10cbdebcfa60
 # ╟─51d03650-13e9-4b24-b9ac-21ebe1dca093
 # ╟─ca0ad9ee-cd43-445b-818c-035a9e28a48a
 # ╟─c7b9947c-8cf2-4c18-942b-1599a9619794
