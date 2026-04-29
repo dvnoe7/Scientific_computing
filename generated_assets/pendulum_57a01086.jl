@@ -44,13 +44,13 @@ function cartpend(u::SVector{4}, p, t)
     # unpack parameters
     m, M, L, g, d, F_func = p
 
-    # unpack state (zero allocation)
+    # unpack state 
     x, ẋ, θ, θ̇ = u
 
     F = F_func(u)
-    s, c = sincos(θ)           # faster than separate sin + cos
+    s, c = sincos(θ)           
     D = m*L^2*(M + m*(1 - c^2))
-    invD = inv(D)              # compute once
+    invD = inv(D)        
 
     temp = m*L*θ̇^2*s - d*ẋ
 
@@ -85,7 +85,7 @@ This helps visualize the natural instability of the inverted pendulum.
 begin	
 	F₁ = u->0
 	p₁ = (m,M,L,g,d,F₁)
-	u0_1 = SA_F64[-3.0, 0.0, 3.0,0.2]   # small angle
+	u0_1 = SA_F64[-3.0, 0.0, 3.0,0.2]  
 	tspan₁ = (0.0, 10.0)
 end;
 
@@ -228,6 +228,7 @@ begin
 		 0 0 10 0
 		 0 0 0 100]
 	R = 0.01
+
 	K₃ = lqr(A,B,Q,R)
 end;
 
@@ -292,11 +293,6 @@ This is important when designing **observers**, such as:
 - **Kalman filters** when measurements are noisy  
 
 Once the states are estimated, we can combine the observer with our state-feedback controller to stabilize the system even under limited observation.
-"""
-
-# ╔═╡ 7bfc29de-3d8a-4b7a-a5b4-10cbdebcfa60
-md"""
-### 3.2 Kalman filter
 """
 
 # ╔═╡ 51d03650-13e9-4b24-b9ac-21ebe1dca093
@@ -2986,7 +2982,7 @@ version = "1.13.0+0"
 # ╟─7a5bd86b-b00b-46c2-b2ee-625b5fef2446
 # ╟─3575030c-c037-4beb-b162-00cd8ce3578e
 # ╟─80b632be-90cd-430f-9bd1-193f476a3e69
-# ╠═8534b873-04af-4b07-a12a-811806aa04c4
+# ╟─8534b873-04af-4b07-a12a-811806aa04c4
 # ╟─4e89d372-3bfe-4231-88b2-9bec8687be7e
 # ╠═87d3c999-c354-4eb1-9e57-6a2137ed9230
 # ╠═36650a43-5d50-44fe-9348-70f395e4368b
@@ -3024,7 +3020,6 @@ version = "1.13.0+0"
 # ╟─66675bc4-1dbf-4d25-9764-1807b229ec02
 # ╟─3174f4ff-645e-485f-932a-f7bbac00f439
 # ╟─c4c86554-6797-445e-a562-ba3c253d07d4
-# ╟─7bfc29de-3d8a-4b7a-a5b4-10cbdebcfa60
 # ╟─51d03650-13e9-4b24-b9ac-21ebe1dca093
 # ╟─ca0ad9ee-cd43-445b-818c-035a9e28a48a
 # ╟─c7b9947c-8cf2-4c18-942b-1599a9619794
