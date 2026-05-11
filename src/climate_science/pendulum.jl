@@ -25,7 +25,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ d5fbed1e-cc38-4da1-836c-e3933b7138bc
-using ControlSystemsBase,LinearAlgebra,PlutoUI,OrdinaryDiffEq ,Plots,StaticArrays,PlutoTeachingTools,LaTeXStrings
+using ControlSystemsBase,LinearAlgebra,PlutoUI,OrdinaryDiffEq ,Plots,PlutoTeachingTools,LaTeXStrings
 
 # ╔═╡ 84ceca2c-9fc2-42f5-8e08-0283511fbf48
 TableOfContents()
@@ -40,37 +40,37 @@ Interactive sliders allow you to experiment with initial conditions and target p
 """
 
 # ╔═╡ 4b0ec2a0-0dbb-11f1-bdf1-b12e0ae4e234
-function cartpend(u::SVector{4}, p, t)
-    # unpack parameters
-    m, M, L, g, d, F_func = p
+function cartpend(u, p, t) 
+    m, M, L, g, d, b, f_func = p
 
-    # unpack state 
-    x, ẋ, θ, θ̇ = u
+    x, v, θ, ω = u
+    
+    s, c = sincos(θ)
+    
+    F = f_func(u)
+    
 
-    F = F_func(u)
-    s, c = sincos(θ)           
-    D = m*L^2*(M + m*(1 - c^2))
-    invD = inv(D)        
+    D = M + m * s^2
 
-    temp = m*L*θ̇^2*s - d*ẋ
-
-    dx   = ẋ
-    dẋ  = invD*(-m^2*L^2*g*c*s + m*L^2*temp) + m*L^2*invD*F
-    dθ   = θ̇
-    dθ̇  = invD*((M + m)*m*g*L*s - m*L*c*temp) - m*L*c*invD*F
-
-    return SVector(dx, dẋ, dθ, dθ̇)
+    total_cart_force = F - d * v + m * L * ω^2 * s
+    
+    dx = v
+    dv = (total_cart_force - m * g * s * c + (b * c * ω) / L) / D
+    dθ = ω
+    dω = ((M + m) * g * s - c * total_cart_force - (M + m) * b * ω / (m * L)) / (L * D)
+    return [dx, dv, dθ, dω]
 end
 
 # ╔═╡ ef7603ef-7443-455d-ad61-bcb8c86c59b3
 begin
-	m = 1
-	M = 5
-	L = 2
-	g = -10
-	d = 1
-	
+    m = 0.5
+    M = 5
+    L = 2.0
+    g = -10.0 # Standard gravity (downward)
+    d = 0.1   # Cart damping
+    b = 0.1  # Pendulum joint damping (NEW)
 end;
+
 
 
 # ╔═╡ 3d51e4b1-94f3-43ed-8288-a7e321f98138
@@ -84,8 +84,8 @@ This helps visualize the natural instability of the inverted pendulum.
 # ╔═╡ 9957936f-0990-422a-8d14-32d9b6eae64c
 begin	
 	F₁ = u->0
-	p₁ = (m,M,L,g,d,F₁)
-	u0_1 = SA_F64[-3.0, 0.0, 3.0,0.2]  
+	p₁ = (m,M,L,g,d,b,F₁)
+	u0_1 = [-3.0, 0.0, 3.0,0.2]  
 	tspan₁ = (0.0, 10.0)
 end;
 
@@ -125,17 +125,15 @@ md"""
 Lineairizing the dynamcis around the Fixed point θ = π/2. By taking the Jacobuian of the dynamics
 """
 
-# ╔═╡ 87d3c999-c354-4eb1-9e57-6a2137ed9230
-s = 1 # pendulum up (s=1)
-
 # ╔═╡ 36650a43-5d50-44fe-9348-70f395e4368b
-A = [0 1 0 0;
-    0 -d/M -m*g/M 0;
-    0 0 0 1;
-    0 -s*d/(M*L) -s*(m+M)*g/(M*L) 0];
+# Linearized around θ = π (upright)
+A = [0   1               0                         0;
+     0 -d/M           -m*g/M                    -b/(M*L);
+     0   0               0                         1;
+     0 -d/(M*L)  -(m+M)*g/(M*L)   -b*(m+M)/(m*M*L^2)];
 
 # ╔═╡ e0623f48-4da6-4ca9-bc83-e3c443c8441c
-B = [0; 1/M; 0; s*1/(M*L)];
+B = [0; 1/M; 0; 1/(M*L)];
 
 # ╔═╡ 5b9c2410-6521-4b83-b4b9-e3c0300185d7
 md"""
@@ -198,7 +196,7 @@ eigvals(A-B*K₂)
 begin 
 	target₂ = [x₂_target; 0.0; π; 0.0]
 	F₂_func = u -> first(-K₂*(u - target₂))
-	p₂=(m,M,L,g,d,F₂_func)
+	p₂=(m,M,L,g,d,b,F₂_func)
 	tspan₂ = (0.0, 10.0)
 
 end;
@@ -225,12 +223,12 @@ begin
 	
 	Q = [1 0 0 0
 		 0 1 0 0
-		 0 0 10 0
-		 0 0 0 100]
-	R = 0.01
+		 0 0 100 0
+		 0 0 0 10]
+	R = 0.1
 
 	K₃ = lqr(A,B,Q,R)
-end;
+end
 
 # ╔═╡ 0dd43299-bb51-4d18-9ad9-2951c7f2b982
 @bindname x₃_target confirm(Slider(-5:0.1:5,default = 4 ,show_value=true))
@@ -239,12 +237,23 @@ end;
 begin 
 	target₃ = [x₃_target, 0.0, π, 0.0]
 	F₃_func = u->first(-K₃*(u-target₃))
-	p₃=(m,M,L,g,d,F₃_func)
+	p₃=(m,M,L,g,d,b,F₃_func)
 	tspan₃ = (0.0, 10.0)
 end;
 
 # ╔═╡ ee477c54-5008-41e4-9064-f04a20de55d9
 @bindname run_animation₃ CheckBox(default=true)
+
+# ╔═╡ 63d4ba1d-7f03-4560-b0e9-e9b31aaf46bf
+md"""
+### 2.5 LQR with upswing
+"""
+
+# ╔═╡ 234efac5-7024-4c4c-a0cd-50798a0e4079
+@bindname x₄_target confirm(Slider(-5:0.1:5,default = 2 ,show_value=true))
+
+# ╔═╡ b2327f78-9991-4cdf-a7fb-d1e41b677592
+@bindname run_animation_swing CheckBox(default=true)
 
 # ╔═╡ 3174f4ff-645e-485f-932a-f7bbac00f439
 md"""
@@ -295,6 +304,35 @@ This is important when designing **observers**, such as:
 Once the states are estimated, we can combine the observer with our state-feedback controller to stabilize the system even under limited observation.
 """
 
+# ╔═╡ fb347454-adbc-42ae-9821-5ab0ddb64118
+md"""
+### 3.2 Kalmann filter example
+"""
+
+# ╔═╡ a0d13950-608f-49e2-bdd7-d38fa5741e75
+# Measure only the cart position (1st state)
+C = [1 0 0 0]  
+
+# ╔═╡ eb4fe993-0fc1-4380-8ec6-bf43e7ee3b0c
+# Check observability matrix rank again with this C
+println("Observability Rank: ", rank(obsv(A, C)))
+
+# ╔═╡ cf2beff8-03ac-44b4-8862-9967a2647e7e
+# Process noise covariance (4x4) - uncertainty in accelerations
+W = I(4) * 0.01
+
+# ╔═╡ a6fa365e-a9f0-4a44-b78d-fb9aadee0a66
+# Measurement noise covariance (1x1) - sensor accuracy
+V = reshape([0.1], 1, 1)
+
+# ╔═╡ e0bc57e6-7aeb-4244-8883-de29d0380981
+# Compute Kalman Gain
+# sys = ss(A, B, C, 0)
+L_gain = kalman(A, C, W, V);
+
+# ╔═╡ a5bbd356-8237-45a8-ac1b-f1676a743291
+@bindname run_animation_lqg CheckBox(default=true)
+
 # ╔═╡ 51d03650-13e9-4b24-b9ac-21ebe1dca093
 function multislider(names,ranges,defaults,title)
 
@@ -328,31 +366,41 @@ aside(@bind sim_3 confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀"],[-5
 # ╔═╡ 548239e5-d628-4888-b0b6-0ea21c0d4b72
 u0_3 = collect(sim_3);
 
+# ╔═╡ 6be68d30-cdd8-49ee-be38-20d728b7bebf
+aside(@bind sim_lqg confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15],[0, -0.2, 3.1, 1,4],"Initial condition and targets"));v_offset=250)
+
 # ╔═╡ ca0ad9ee-cd43-445b-818c-035a9e28a48a
-function sim_cartpend(u0::SVector{4}, tspan, p)
+function sim_cartpend(u0, tspan, p)
+    # 1. Create and solve the problem with the wall callback
     prob = ODEProblem(cartpend, u0, tspan, p)
-    sol = solve(prob, Vern9(), saveat=0.01)
+    
+    # We add the callback here to enforce x limits
+    sol = solve(prob, Tsit5(), saveat=0.01)
 
     t = sol.t
-    X = reduce(hcat, sol.u)  # much faster than sol[i, :]
+    # Efficiently unpack the solved states
+    X = reduce(hcat, sol.u)
     
-    x   = @view X[1, :]
-    ẋ  = @view X[2, :]
-    θ   = @view X[3, :]
+    x  = @view X[1, :]
+    ẋ  = @view X[2, :]
+    θ  = @view X[3, :]
     θ̇  = @view X[4, :]
 
-	# Compute F along trajectory
-    F_func = p[6]
-    F = [F_func(@SVector [x[i], ẋ[i], θ[i], θ̇[i]])[1] for i in 1:length(t)]
+    # 2. Compute Control Force F along the trajectory
+    # Since p[7] is F_func, we call it for each state in the solution
+    F_func = p[7]
+    F = [F_func([x[i], ẋ[i], θ[i], θ̇[i]]) for i in 1:length(t)]
 	
-    return [x ẋ θ θ̇], t, F
+    # Return formatted matrix, time vector, and Force vector
+    # x and ẋ are already limited by the callback logic
+    return [x ẋ mod.(θ, 2π) θ̇], t, F
 end
 
 # ╔═╡ 887a1ead-d7b2-42f6-8b44-ab34c43f7e2f
 	x₁,t₁=sim_cartpend(u0_1,tspan₁,p₁);
 
 # ╔═╡ f1adfd2d-9e1f-4053-8acb-870b1cd5350e
-x₂,t₂,F₂=sim_cartpend(SVector{4}(u0_2),tspan₂,p₂);
+x₂,t₂,F₂=sim_cartpend(u0_2,tspan₂,p₂);
 
 # ╔═╡ c0d998a3-fbfa-4500-a3a1-3ff1c22c6ce8
 @bind i₂ Slider(1:length(t₂)/10+1)
@@ -364,7 +412,7 @@ t₂_current = round(0.1*(i₂-1),digits=2)
 plot(t₂,F₂,label="Optimal force",ylabel="F [N]",xlabel="Time [s]",ylim=[-50,50])
 
 # ╔═╡ 3d182b32-adb9-4982-89d7-ed3afaec13a1
-x₃,t₃,F₃ = sim_cartpend(SVector{4}(u0_3),tspan₃,p₃);
+x₃,t₃,F₃ = sim_cartpend(u0_3,tspan₃,p₃);
 
 # ╔═╡ 3e7672e1-92b6-45b0-9010-c2bd2699eba4
 @bind i₃ Slider(1:length(t₃)/10+1)
@@ -554,6 +602,187 @@ else
 	PlutoUI.LocalResource("optimal_control.mp4")
 end
 
+# ╔═╡ 7caac74a-8727-4370-b618-6214b008f30f
+function swing_up_force(u, m, M, L, g, k_energy)
+    x, ẋ, θ, θ̇ = u
+    
+    # 1. Total Energy (Top = 0, Bottom = 2gL)
+    E = 0.5 * m * L * θ̇^2 - m * g * L * (cos(θ) + 1)
+    
+    # 2. Control Law
+    # Note: Added a minus sign '-' at the start. 
+    # Because E_error is negative at the bottom, we need to flip the sign
+    # to ensure the work done by the cart increases the energy.
+    a = -k_energy * E * sign(θ̇ * cos(θ))
+    
+    # Return force (F = m*a)
+    return a * M
+end
+
+# ╔═╡ e70503ac-4974-4bd5-bb1a-91d18927dd14
+begin
+    # Adjusted gain and threshold for a smoother "catch"
+    k_swing_val = 0.25
+    angle_thresh = 0.5
+
+    F_hybrid = u -> begin
+
+		x, ẋ, θ, θ̇ = u
+        # Normalize angle to [0, 2π] then find distance to π
+        # This handles the pendulum swinging from the bottom (0) up to π
+        θ = mod(θ, 2π)
+        dist_from_top = abs(θ - π)
+        
+        if dist_from_top < angle_thresh
+            # Phase 2: LQR
+            # Ensure target₃ is defined as [x_target, 0, π, 0]
+            return first(-K₃ * ([x, ẋ, θ, θ̇] - [x₄_target, 0.0, π, 0.0]))
+        else
+            # Phase 1: Energy Swing-up
+            f = swing_up_force(u, m, M, L, g, k_swing_val)
+            return f
+        end
+    end
+end
+
+# ╔═╡ ec759fc7-0e51-4f15-bd37-9eeb414b4694
+begin
+    # Starting from the bottom (hanging down)
+    u0_swing = [0.0, -2,0,-0.5] 
+    p_swing = (m, M, L, g, d,b, F_hybrid)
+    tspan_swing = (0.0, 20.0) # Give it more time to build momentum
+    
+    x_swing, t_swing, F_swing = sim_cartpend(u0_swing, tspan_swing, p_swing)
+end
+
+# ╔═╡ 04dc50c5-e659-4aad-9032-969298c6e95b
+plot_data(x_swing, t_swing,[x₄_target, 0.0, π, 0.0])
+
+# ╔═╡ ea5ae2af-6582-42c6-aca1-41998dfe9180
+plot(t_swing,F_swing,label="Optimal force",ylabel="F [N]",xlabel="Time [s]",ylim=[-50,50])
+
+# ╔═╡ 340ece0c-d61e-4cd8-b49a-108fe85bd49d
+if run_animation_swing
+    # We use x_swing and t_swing from our new simulation
+    anim_cart(x_swing[:,1], x_swing[:,3], t_swing, L, 40, name="swing_up.mp4")
+else
+    PlutoUI.LocalResource("swing_up.mp4")
+end
+
+# ╔═╡ 56d2f98e-69db-4694-b8e5-237025173941
+function lqg_dynamics(u_combined, p, t)
+    m, M, L, g, d, b, K, L_gain, C, target = p
+    x_true = u_combined[1:4]
+    x_hat  = u_combined[5:8]
+    
+    y = (C * x_true) .+ 0.01 * randn(size(C,1))
+    
+    # Calculate state error (deviation from linearization point)
+    # This is what the A matrix understands!
+    e_hat = x_hat - target
+    
+    u = -K * e_hat
+    force = u[1]
+    
+    dx_true = cartpend(x_true, (m, M, L, g, d, b, _ -> force), t)
+    
+    # UPDATE: dx_hat = A*(x_hat - target) + B*u + L*(y - C*x_hat)
+    # This ensures the linear model is centered at the upright position
+    dx_hat = (A * e_hat) .+ (B * force) .+ (L_gain * (y - C * x_hat))
+    
+    return [dx_true; dx_hat]
+end
+
+# ╔═╡ ae0183e7-6e3b-4ad3-911b-90f9a2452d89
+function sim_cartpend_lqg(u0, tspan, p)
+    # 1. Create and solve the problem with the wall callback
+    prob = ODEProblem(lqg_dynamics, u0, tspan, p)
+    
+    # We add the callback here to enforce x limits
+    sol = solve(prob, Rosenbrock23(), saveat=0.01, maxiters=1e6)
+
+    t = sol.t
+    # Efficiently unpack the solved states
+    X = reduce(hcat, sol.u)
+    
+    x  = @view X[1, :]
+    ẋ  = @view X[2, :]
+    θ  = @view X[3, :]
+    θ̇  = @view X[4, :]
+
+	x̂ = @view X[5, :]
+	ẋ̂ = @view X[6, :]
+	θ̂ = @view X[7, :]
+	θ̇̂ = @view X[8, :]
+    # 2. Compute Control Force F along the trajectory
+    # Since p[7] is F_func, we call it for each state in the solution
+    K = p[7]
+	target = p[10]
+    F = [-K*([x̂[i], ẋ̂[i], θ̂[i], θ̇̂[i]]-target) for i in 1:length(t)]
+	
+    # Return formatted matrix, time vector, and Force vector
+    # x and ẋ are already limited by the callback logic
+    return [x ẋ mod.(θ, 2π) θ̇],[ x̂ ẋ̂ mod.(θ̂,2π) θ̇̂], t, F
+end
+
+# ╔═╡ ddad9844-b682-46cd-ae12-6c6891d39a86
+begin
+	# Target: Cart at 2.0, Pendulum upright (π)
+	target_lqg = [2.0, 0.0, π, 0.0]
+	
+	# Initial conditions: [True State; Initial Guess]
+	# We start the pendulum slightly off, and the observer at zero
+	u0_lqg = [collect(sim_lqg)    # True state
+	          collect(sim_lqg)]   # Observer's guess (initial x_hat)
+	
+	p_lqg = (m, M, L, g, d, b, K₃, L_gain, C, target_lqg)
+	tspan_lqg=(0,10)
+	x_lqg,x̂_lqg,t_lqg,F_lqg = sim_cartpend_lqg(u0_lqg,tspan_lqg,p_lqg)
+end;
+
+# ╔═╡ 905b280f-7881-4b0a-a265-aa09a23f0c2b
+begin
+	# Calculate errors: Truth - Estimate
+	# x_lqg is (N x 4), x̂_lqg is (N x 4)
+	errors = x_lqg .- x̂_lqg
+	
+	error_x  = errors[:, 1]  # Cart position error
+	error_θ  = errors[:, 3]  # Pendulum angle error
+	error_ẋ  = errors[:, 2]  # Cart velocity error
+	error_θ̇  = errors[:, 4]  # Pendulum velocity error
+end;
+
+# ╔═╡ 23bdd73f-66b8-4c1e-8ff9-315aa7aa3558
+plot_data(x_lqg, t_lqg,[2, 0.0, π, 0.0])
+
+# ╔═╡ 584a0b78-9641-421c-92bb-806402543ee9
+if run_animation_lqg
+    # We use x_swing and t_swing from our new simulation
+    anim_cart(x_lqg[:,1], x_lqg[:,3], t_lqg, L, 40, name="lqg.mp4")
+else
+    PlutoUI.LocalResource("lqg.mp4")
+end
+
+# ╔═╡ e1f94d93-8480-49f9-9dfe-f3b5d2c91b23
+begin
+    p1 = plot(t_lqg, error_x, ylabel="x error [m]", color=:blue, lw=1.5)
+    hline!([0], color=:black, linestyle=:dash, label="")
+    
+    p2 = plot(t_lqg, error_θ, ylabel="θ error [rad]", color=:red, lw=1.5)
+    hline!([0], color=:black, linestyle=:dash, label="")
+    
+    p3 = plot(t_lqg, error_ẋ, ylabel="ẋ error [m/s]", color=:green, lw=1.5)
+    hline!([0], color=:black, linestyle=:dash, label="")
+    
+    p4 = plot(t_lqg, error_θ̇, ylabel="θ̇ error [rad/s]", color=:purple, lw=1.5)
+    hline!([0], color=:black, linestyle=:dash, label="")
+    
+    plot(p1, p2, p3, p4, layout=(2,2), 
+         xlabel="Time [s]", 
+         plot_title="Kalman Filter Estimation Errors",
+         legend=false, size=(800, 600))
+end
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -564,7 +793,6 @@ OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoTeachingTools = "661c6b06-c737-4d37-b85c-46df65de6f69"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
 ControlSystemsBase = "~1.20.2"
@@ -573,7 +801,6 @@ OrdinaryDiffEq = "~6.108.0"
 Plots = "~1.41.6"
 PlutoTeachingTools = "~0.4.7"
 PlutoUI = "~0.7.79"
-StaticArrays = "~1.9.17"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -582,7 +809,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.12.5"
 manifest_format = "2.0"
-project_hash = "27fe0e819fd59c21b2b53d7f105837c2f6f87dc5"
+project_hash = "b2c37fb48d465b895d759b31ca7c03526c6a78f1"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "f7304359109c768cf32dc5fa2d371565bb63b68a"
@@ -2984,7 +3211,6 @@ version = "1.13.0+0"
 # ╟─80b632be-90cd-430f-9bd1-193f476a3e69
 # ╟─8534b873-04af-4b07-a12a-811806aa04c4
 # ╟─4e89d372-3bfe-4231-88b2-9bec8687be7e
-# ╠═87d3c999-c354-4eb1-9e57-6a2137ed9230
 # ╠═36650a43-5d50-44fe-9348-70f395e4368b
 # ╠═e0623f48-4da6-4ca9-bc83-e3c443c8441c
 # ╟─5b9c2410-6521-4b83-b4b9-e3c0300185d7
@@ -3018,12 +3244,36 @@ version = "1.13.0+0"
 # ╟─47136fb9-9582-4eee-8922-09bfc5bdd4a2
 # ╟─aadc058a-008a-44ad-abe7-6344d1ab6135
 # ╟─66675bc4-1dbf-4d25-9764-1807b229ec02
+# ╟─63d4ba1d-7f03-4560-b0e9-e9b31aaf46bf
+# ╠═e70503ac-4974-4bd5-bb1a-91d18927dd14
+# ╟─234efac5-7024-4c4c-a0cd-50798a0e4079
+# ╠═04dc50c5-e659-4aad-9032-969298c6e95b
+# ╟─ea5ae2af-6582-42c6-aca1-41998dfe9180
+# ╠═ec759fc7-0e51-4f15-bd37-9eeb414b4694
+# ╟─b2327f78-9991-4cdf-a7fb-d1e41b677592
+# ╟─340ece0c-d61e-4cd8-b49a-108fe85bd49d
 # ╟─3174f4ff-645e-485f-932a-f7bbac00f439
 # ╟─c4c86554-6797-445e-a562-ba3c253d07d4
+# ╟─fb347454-adbc-42ae-9821-5ab0ddb64118
+# ╠═a0d13950-608f-49e2-bdd7-d38fa5741e75
+# ╠═eb4fe993-0fc1-4380-8ec6-bf43e7ee3b0c
+# ╠═cf2beff8-03ac-44b4-8862-9967a2647e7e
+# ╠═a6fa365e-a9f0-4a44-b78d-fb9aadee0a66
+# ╠═e0bc57e6-7aeb-4244-8883-de29d0380981
+# ╠═ddad9844-b682-46cd-ae12-6c6891d39a86
+# ╟─905b280f-7881-4b0a-a265-aa09a23f0c2b
+# ╟─6be68d30-cdd8-49ee-be38-20d728b7bebf
+# ╟─23bdd73f-66b8-4c1e-8ff9-315aa7aa3558
+# ╟─a5bbd356-8237-45a8-ac1b-f1676a743291
+# ╟─584a0b78-9641-421c-92bb-806402543ee9
 # ╟─51d03650-13e9-4b24-b9ac-21ebe1dca093
+# ╟─e1f94d93-8480-49f9-9dfe-f3b5d2c91b23
 # ╟─ca0ad9ee-cd43-445b-818c-035a9e28a48a
 # ╟─c7b9947c-8cf2-4c18-942b-1599a9619794
 # ╟─b0979471-c10f-459f-9b56-b70447d5db79
 # ╟─d28d6d09-37c9-4275-af87-649f04ab1508
+# ╟─7caac74a-8727-4370-b618-6214b008f30f
+# ╟─56d2f98e-69db-4694-b8e5-237025173941
+# ╟─ae0183e7-6e3b-4ad3-911b-90f9a2452d89
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
