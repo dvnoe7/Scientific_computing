@@ -54,11 +54,11 @@ function cartpend(u, p, t)
 
     total_cart_force = F - d * v + m * L * ω^2 * s
     
-    dx = v
-    dv = (total_cart_force - m * g * s * c + (b * c * ω) / L) / D
-    dθ = ω
-    dω = ((M + m) * g * s - c * total_cart_force - (M + m) * b * ω / (m * L)) / (L * D)
-    return [dx, dv, dθ, dω]
+    ẋ = v
+    v̇ = (total_cart_force - m * g * s * c + (b * c * ω) / L) / D
+    θ̇ = ω
+    ω̇ = ((M + m) * g * s - c * total_cart_force - (M + m) * b * ω / (m * L)) / (L * D)
+    return [ẋ, v̇, θ̇,ω̇]
 end
 
 # ╔═╡ ef7603ef-7443-455d-ad61-bcb8c86c59b3
@@ -83,10 +83,10 @@ This helps visualize the natural instability of the inverted pendulum.
 
 # ╔═╡ 9957936f-0990-422a-8d14-32d9b6eae64c
 begin	
-	F₁ = u->0
-	p₁ = (m,M,L,g,d,b,F₁)
-	u0_1 = [-3.0, 0.0, 3.0,0.2]  
-	tspan₁ = (0.0, 10.0)
+	F = u->0
+	p = (m,M,L,g,d,b,F)
+	u₀ = [-3.0, 0.0, 3.0,0.2]  
+	tspan = (0.0, 10.0)
 end;
 
 # ╔═╡ 7a5bd86b-b00b-46c2-b2ee-625b5fef2446
@@ -183,21 +183,21 @@ We design a **state-feedback controller** using pole placement.
 # ╔═╡ 0c98e1fa-24bc-49ef-846d-c9e0c8744bad
 begin
 		eigs = [-0.6; -0.7; -0.8; -0.9] 
-		K₂ = place(A,B,eigs)
+		K_place = place(A,B,eigs)
 end
 
 # ╔═╡ 33ebcd3c-8778-424e-863e-d5713cee131e
-eigvals(A-B*K₂)
+eigvals(A-B*K_place)
 
 # ╔═╡ 3a129d05-51d1-4140-8175-e9af607dee8d
-@bindname x₂_target confirm(Slider(-5:0.1:5,default = 4 ,show_value=true))
+@bindname x_place_target confirm(Slider(-5:0.1:5,default = 4 ,show_value=true))
 
 # ╔═╡ c0b2e678-91e2-4f68-b470-f0b4c3a5dd8c
 begin 
-	target₂ = [x₂_target; 0.0; π; 0.0]
-	F₂_func = u -> first(-K₂*(u - target₂))
-	p₂=(m,M,L,g,d,b,F₂_func)
-	tspan₂ = (0.0, 10.0)
+	target_place = [x_place_target; 0.0; π; 0.0]
+	F_place_func = u -> first(-K_place*(u - target_place))
+	p_place=(m,M,L,g,d,b,F_place_func)
+	tspan_place = (0.0, 10.0)
 
 end;
 
@@ -227,18 +227,18 @@ begin
 		 0 0 0 10]
 	R = 0.1
 
-	K₃ = lqr(A,B,Q,R)
+	K_lqr = lqr(A,B,Q,R)
 end
 
 # ╔═╡ 0dd43299-bb51-4d18-9ad9-2951c7f2b982
-@bindname x₃_target confirm(Slider(-5:0.1:5,default = 4 ,show_value=true))
+@bindname x_lqr_target confirm(Slider(-5:0.1:5,default = 4 ,show_value=true))
 
 # ╔═╡ 47676210-77ed-43be-8bfb-a48b5354330a
 begin 
-	target₃ = [x₃_target, 0.0, π, 0.0]
-	F₃_func = u->first(-K₃*(u-target₃))
-	p₃=(m,M,L,g,d,b,F₃_func)
-	tspan₃ = (0.0, 10.0)
+	target_lqr = [x_lqr_target, 0.0, π, 0.0]
+	F_lqr_func = u->first(-K_lqr*(u-target_lqr))
+	p_lqr=(m,M,L,g,d,b,F_lqr_func)
+	tspan_lqr = (0.0, 10.0)
 end;
 
 # ╔═╡ ee477c54-5008-41e4-9064-f04a20de55d9
@@ -250,7 +250,7 @@ md"""
 """
 
 # ╔═╡ 234efac5-7024-4c4c-a0cd-50798a0e4079
-@bindname x₄_target confirm(Slider(-5:0.1:5,default = 2 ,show_value=true))
+@bindname x_swing_target confirm(Slider(-5:0.1:5,default = 2 ,show_value=true))
 
 # ╔═╡ b2327f78-9991-4cdf-a7fb-d1e41b677592
 @bindname run_animation_swing CheckBox(default=true)
@@ -355,16 +355,16 @@ function multislider(names,ranges,defaults,title)
 end
 
 # ╔═╡ 0a45bd2b-76cb-4e1e-b391-e362ec22c3d9
-aside(@bind sim_2 confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15],[0, -0.2, 3.1, 1,4],"Initial condition and targets"));v_offset=250)
+aside(@bind sim_place confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15],[0, -0.2, 3.1, 1,4],"Initial condition and targets"));v_offset=250)
 
 # ╔═╡ 1f46cc17-9488-4cbd-9f0c-d081a5e6a6d2
-u0_2 = collect(sim_2);
+u₀_place = collect(sim_place);
 
 # ╔═╡ c850c798-b181-4307-852a-a192071772bb
-aside(@bind sim_3 confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15],[0, -0.2, 3.1, 1,4],"Initial condition and targets"));v_offset=250)
+aside(@bind sim_lqr confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15],[0, -0.2, 3.1, 1,4],"Initial condition and targets"));v_offset=250)
 
 # ╔═╡ 548239e5-d628-4888-b0b6-0ea21c0d4b72
-u0_3 = collect(sim_3);
+u₀_lqr = collect(sim_lqr);
 
 # ╔═╡ 6be68d30-cdd8-49ee-be38-20d728b7bebf
 aside(@bind sim_lqg confirm(multislider(["x₀", "ẋ₀", "θ₀", "θ̇₀"],[-5:0.1:5, -1:0.1:1 ,3:0.01:3.3, -3.15:0.01:3.15],[0, -0.2, 3.1, 1,4],"Initial condition and targets"));v_offset=250)
@@ -382,46 +382,46 @@ function sim_cartpend(u0, tspan, p)
     X = reduce(hcat, sol.u)
     
     x  = @view X[1, :]
-    ẋ  = @view X[2, :]
+    v  = @view X[2, :]
     θ  = @view X[3, :]
-    θ̇  = @view X[4, :]
+    ω  = @view X[4, :]
 
     # 2. Compute Control Force F along the trajectory
     # Since p[7] is F_func, we call it for each state in the solution
     F_func = p[7]
-    F = [F_func([x[i], ẋ[i], θ[i], θ̇[i]]) for i in 1:length(t)]
+    F = [F_func([x[i], v[i], θ[i], ω[i]]) for i in 1:length(t)]
 	
     # Return formatted matrix, time vector, and Force vector
     # x and ẋ are already limited by the callback logic
-    return [x ẋ mod.(θ, 2π) θ̇], t, F
+    return [x v mod.(θ, 2π) ω], t, F
 end
 
 # ╔═╡ 887a1ead-d7b2-42f6-8b44-ab34c43f7e2f
-	x₁,t₁=sim_cartpend(u0_1,tspan₁,p₁);
+	x,t=sim_cartpend(u₀,tspan,p);
 
 # ╔═╡ f1adfd2d-9e1f-4053-8acb-870b1cd5350e
-x₂,t₂,F₂=sim_cartpend(u0_2,tspan₂,p₂);
+x_place,t_place,F_place=sim_cartpend(u₀_place,tspan_place,p_place);
 
 # ╔═╡ c0d998a3-fbfa-4500-a3a1-3ff1c22c6ce8
-@bind i₂ Slider(1:length(t₂)/10+1)
+@bind i_place Slider(1:length(t_place)/10+1)
 
 # ╔═╡ 9ac76be8-2e3a-4f19-bef0-02bfa01014bf
-t₂_current = round(0.1*(i₂-1),digits=2)
+t_place_current = round(0.1*(i_place-1),digits=2)
 
 # ╔═╡ bd931e56-c6ab-4f45-8f26-ca4748d01a5d
-plot(t₂,F₂,label="Optimal force",ylabel="F [N]",xlabel="Time [s]",ylim=[-50,50])
+plot(t_place,F_place,label="Optimal force",ylabel="F [N]",xlabel="Time [s]",ylim=[-50,50])
 
 # ╔═╡ 3d182b32-adb9-4982-89d7-ed3afaec13a1
-x₃,t₃,F₃ = sim_cartpend(u0_3,tspan₃,p₃);
+x_lqr,t_lqr,F_lqr = sim_cartpend(u₀_lqr,tspan_lqr,p_lqr);
 
 # ╔═╡ 3e7672e1-92b6-45b0-9010-c2bd2699eba4
-@bind i₃ Slider(1:length(t₃)/10+1)
+@bind i_lqr Slider(1:length(t_lqr)/10+1)
 
 # ╔═╡ 6f74ed45-e706-4876-95c8-78c3d6b3becd
-t₃_current = round(0.1*(i₃-1),digits=2)
+t_lqr_current = round(0.1*(i_lqr-1),digits=2)
 
 # ╔═╡ 66675bc4-1dbf-4d25-9764-1807b229ec02
-plot(t₃,F₃,label="Optimal force",ylabel="F [N]",xlabel="Time [s]",ylim=[-50,50])
+plot(t_lqr,F_lqr,label="Optimal force",ylabel="F [N]",xlabel="Time [s]",ylim=[-50,50])
 
 # ╔═╡ c7b9947c-8cf2-4c18-942b-1599a9619794
 function plot_data(x, t, target)
@@ -443,10 +443,10 @@ function plot_data(x, t, target)
 end
 
 # ╔═╡ 491e9cda-626d-493b-a7ed-5ad770e8ffc4
-plot_data(x₂,t₂,target₂)
+plot_data(x_place,t_place,target_place)
 
 # ╔═╡ aadc058a-008a-44ad-abe7-6344d1ab6135
-plot_data(x₃,t₃,target₃)
+plot_data(x_lqr,t_lqr,target_lqr)
 
 # ╔═╡ b0979471-c10f-459f-9b56-b70447d5db79
 function plot_cart(X,θ,t,t_current)
@@ -508,10 +508,10 @@ function plot_cart(X,θ,t,t_current)
 end
 
 # ╔═╡ c0d99293-7cd3-41f2-937d-2d7b56447512
-plot_cart(x₂[:,1],x₂[:,3],t₂,t₂_current)
+plot_cart(x_place[:,1],x_place[:,3],t_place,t_place_current)
 
 # ╔═╡ 75b22bc3-72c5-435f-9518-49b75afe7d37
-plot_cart(x₃[:,1],x₃[:,3],t₃,t₃_current)
+plot_cart(x_lqr[:,1],x_lqr[:,3],t_lqr,t_lqr_current)
 
 # ╔═╡ d28d6d09-37c9-4275-af87-649f04ab1508
 function anim_cart(X, θ, t, L, fps; name=nothing)
@@ -583,37 +583,37 @@ end
 
 # ╔═╡ 3575030c-c037-4beb-b162-00cd8ce3578e
 if run_animation₁
-	anim_cart(x₁[:,1],x₁[:,3],t₁,L,40,name="pendu_cart.mp4")
+	anim_cart(x[:,1],x[:,3],t,L,40,name="pendu_cart.mp4")
 else 
 	PlutoUI.LocalResource("pendu_cart.mp4")
 end
 
 # ╔═╡ 900cf649-47de-4a9a-80a5-1c0cecccac7d
 if run_animation₂
-	anim_cart(x₂[:,1],x₂[:,3],t₂,L,40,name="pole_place.mp4")
+	anim_cart(x_place[:,1],x_place[:,3],t_place,L,40,name="pole_place.mp4")
 else 
 	PlutoUI.LocalResource("pole_place.mp4")
 end
 
 # ╔═╡ 47136fb9-9582-4eee-8922-09bfc5bdd4a2
 if run_animation₃
-	anim_cart(x₃[:,1],x₃[:,3],t₃,L,40)
+	anim_cart(x_lqr[:,1],x_lqr[:,3],t_lqr,L,40)
 else
 	PlutoUI.LocalResource("optimal_control.mp4")
 end
 
 # ╔═╡ 7caac74a-8727-4370-b618-6214b008f30f
 function swing_up_force(u, m, M, L, g, k_energy)
-    x, ẋ, θ, θ̇ = u
+    x, v, θ, ω = u
     
     # 1. Total Energy (Top = 0, Bottom = 2gL)
-    E = 0.5 * m * L * θ̇^2 - m * g * L * (cos(θ) + 1)
+    E = 0.5 * m * L * ω^2 - m * g * L * (cos(θ) + 1)
     
     # 2. Control Law
     # Note: Added a minus sign '-' at the start. 
     # Because E_error is negative at the bottom, we need to flip the sign
     # to ensure the work done by the cart increases the energy.
-    a = -k_energy * E * sign(θ̇ * cos(θ))
+    a = -k_energy * E * sign(ω * cos(θ))
     
     # Return force (F = m*a)
     return a * M
@@ -625,9 +625,9 @@ begin
     k_swing_val = 0.25
     angle_thresh = 0.5
 
-    F_hybrid = u -> begin
+    F_swing_func = u -> begin
 
-		x, ẋ, θ, θ̇ = u
+		x, v, θ, ω = u
         # Normalize angle to [0, 2π] then find distance to π
         # This handles the pendulum swinging from the bottom (0) up to π
         θ = mod(θ, 2π)
@@ -636,7 +636,7 @@ begin
         if dist_from_top < angle_thresh
             # Phase 2: LQR
             # Ensure target₃ is defined as [x_target, 0, π, 0]
-            return first(-K₃ * ([x, ẋ, θ, θ̇] - [x₄_target, 0.0, π, 0.0]))
+            return first(-K_lqr * ([x, v, θ, ω] - [x_swing_target, 0.0, π, 0.0]))
         else
             # Phase 1: Energy Swing-up
             f = swing_up_force(u, m, M, L, g, k_swing_val)
@@ -648,15 +648,15 @@ end
 # ╔═╡ ec759fc7-0e51-4f15-bd37-9eeb414b4694
 begin
     # Starting from the bottom (hanging down)
-    u0_swing = [0.0, -2,0,-0.5] 
-    p_swing = (m, M, L, g, d,b, F_hybrid)
+    u₀_swing = [0.0, -2,0,-0.5] 
+    p_swing = (m, M, L, g, d,b, F_swing_func)
     tspan_swing = (0.0, 20.0) # Give it more time to build momentum
     
-    x_swing, t_swing, F_swing = sim_cartpend(u0_swing, tspan_swing, p_swing)
+    x_swing, t_swing, F_swing = sim_cartpend(u₀_swing, tspan_swing, p_swing)
 end
 
 # ╔═╡ 04dc50c5-e659-4aad-9032-969298c6e95b
-plot_data(x_swing, t_swing,[x₄_target, 0.0, π, 0.0])
+plot_data(x_swing, t_swing,[x_swing_target, 0.0, π, 0.0])
 
 # ╔═╡ ea5ae2af-6582-42c6-aca1-41998dfe9180
 plot(t_swing,F_swing,label="Optimal force",ylabel="F [N]",xlabel="Time [s]",ylim=[-50,50])
@@ -706,23 +706,23 @@ function sim_cartpend_lqg(u0, tspan, p)
     X = reduce(hcat, sol.u)
     
     x  = @view X[1, :]
-    ẋ  = @view X[2, :]
+    v  = @view X[2, :]
     θ  = @view X[3, :]
-    θ̇  = @view X[4, :]
+    ω  = @view X[4, :]
 
 	x̂ = @view X[5, :]
-	ẋ̂ = @view X[6, :]
+	v̂ = @view X[6, :]
 	θ̂ = @view X[7, :]
-	θ̇̂ = @view X[8, :]
+	ω̂ = @view X[8, :]
     # 2. Compute Control Force F along the trajectory
     # Since p[7] is F_func, we call it for each state in the solution
     K = p[7]
 	target = p[10]
-    F = [-K*([x̂[i], ẋ̂[i], θ̂[i], θ̇̂[i]]-target) for i in 1:length(t)]
+    F = [-K*([x̂[i], v̂[i], θ̂[i], ω̂[i]]-target) for i in 1:length(t)]
 	
     # Return formatted matrix, time vector, and Force vector
     # x and ẋ are already limited by the callback logic
-    return [x ẋ mod.(θ, 2π) θ̇],[ x̂ ẋ̂ mod.(θ̂,2π) θ̇̂], t, F
+    return [x v mod.(θ, 2π) ω],[ x̂ v̂ mod.(θ̂,2π) ω̂], t, F
 end
 
 # ╔═╡ ddad9844-b682-46cd-ae12-6c6891d39a86
@@ -732,12 +732,12 @@ begin
 	
 	# Initial conditions: [True State; Initial Guess]
 	# We start the pendulum slightly off, and the observer at zero
-	u0_lqg = [collect(sim_lqg)    # True state
+	u₀_lqg = [collect(sim_lqg)    # True state
 	          collect(sim_lqg)]   # Observer's guess (initial x_hat)
 	
-	p_lqg = (m, M, L, g, d, b, K₃, L_gain, C, target_lqg)
+	p_lqg = (m, M, L, g, d, b, K_lqr, L_gain, C, target_lqg)
 	tspan_lqg=(0,10)
-	x_lqg,x̂_lqg,t_lqg,F_lqg = sim_cartpend_lqg(u0_lqg,tspan_lqg,p_lqg)
+	x_lqg,x̂_lqg,t_lqg,F_lqg = sim_cartpend_lqg(u₀_lqg,tspan_lqg,p_lqg)
 end;
 
 # ╔═╡ 905b280f-7881-4b0a-a265-aa09a23f0c2b
@@ -748,8 +748,8 @@ begin
 	
 	error_x  = errors[:, 1]  # Cart position error
 	error_θ  = errors[:, 3]  # Pendulum angle error
-	error_ẋ  = errors[:, 2]  # Cart velocity error
-	error_θ̇  = errors[:, 4]  # Pendulum velocity error
+	error_v  = errors[:, 2]  # Cart velocity error
+	error_ω  = errors[:, 4]  # Pendulum velocity error
 end;
 
 # ╔═╡ 23bdd73f-66b8-4c1e-8ff9-315aa7aa3558
@@ -771,10 +771,10 @@ begin
     p2 = plot(t_lqg, error_θ, ylabel="θ error [rad]", color=:red, lw=1.5)
     hline!([0], color=:black, linestyle=:dash, label="")
     
-    p3 = plot(t_lqg, error_ẋ, ylabel="ẋ error [m/s]", color=:green, lw=1.5)
+    p3 = plot(t_lqg, error_v, ylabel="v error [m/s]", color=:green, lw=1.5)
     hline!([0], color=:black, linestyle=:dash, label="")
     
-    p4 = plot(t_lqg, error_θ̇, ylabel="θ̇ error [rad/s]", color=:purple, lw=1.5)
+    p4 = plot(t_lqg, error_ω, ylabel="ω error [rad/s]", color=:purple, lw=1.5)
     hline!([0], color=:black, linestyle=:dash, label="")
     
     plot(p1, p2, p3, p4, layout=(2,2), 
@@ -3207,7 +3207,7 @@ version = "1.13.0+0"
 # ╠═9957936f-0990-422a-8d14-32d9b6eae64c
 # ╠═887a1ead-d7b2-42f6-8b44-ab34c43f7e2f
 # ╟─7a5bd86b-b00b-46c2-b2ee-625b5fef2446
-# ╟─3575030c-c037-4beb-b162-00cd8ce3578e
+# ╠═3575030c-c037-4beb-b162-00cd8ce3578e
 # ╟─80b632be-90cd-430f-9bd1-193f476a3e69
 # ╟─8534b873-04af-4b07-a12a-811806aa04c4
 # ╟─4e89d372-3bfe-4231-88b2-9bec8687be7e
@@ -3220,8 +3220,8 @@ version = "1.13.0+0"
 # ╠═33ebcd3c-8778-424e-863e-d5713cee131e
 # ╠═c0b2e678-91e2-4f68-b470-f0b4c3a5dd8c
 # ╠═f1adfd2d-9e1f-4053-8acb-870b1cd5350e
-# ╟─1f46cc17-9488-4cbd-9f0c-d081a5e6a6d2
-# ╟─0a45bd2b-76cb-4e1e-b391-e362ec22c3d9
+# ╠═1f46cc17-9488-4cbd-9f0c-d081a5e6a6d2
+# ╠═0a45bd2b-76cb-4e1e-b391-e362ec22c3d9
 # ╟─3a129d05-51d1-4140-8175-e9af607dee8d
 # ╟─9ac76be8-2e3a-4f19-bef0-02bfa01014bf
 # ╟─c0d998a3-fbfa-4500-a3a1-3ff1c22c6ce8
@@ -3233,7 +3233,7 @@ version = "1.13.0+0"
 # ╟─f1a763a1-7be7-4584-8607-cc35435fade5
 # ╠═f8dc507b-15d0-45c2-a8f6-21f7b82ffdc6
 # ╠═47676210-77ed-43be-8bfb-a48b5354330a
-# ╠═3d182b32-adb9-4982-89d7-ed3afaec13a1
+# ╟─3d182b32-adb9-4982-89d7-ed3afaec13a1
 # ╟─548239e5-d628-4888-b0b6-0ea21c0d4b72
 # ╟─c850c798-b181-4307-852a-a192071772bb
 # ╟─0dd43299-bb51-4d18-9ad9-2951c7f2b982
@@ -3246,7 +3246,7 @@ version = "1.13.0+0"
 # ╟─66675bc4-1dbf-4d25-9764-1807b229ec02
 # ╟─63d4ba1d-7f03-4560-b0e9-e9b31aaf46bf
 # ╠═e70503ac-4974-4bd5-bb1a-91d18927dd14
-# ╟─234efac5-7024-4c4c-a0cd-50798a0e4079
+# ╠═234efac5-7024-4c4c-a0cd-50798a0e4079
 # ╠═04dc50c5-e659-4aad-9032-969298c6e95b
 # ╟─ea5ae2af-6582-42c6-aca1-41998dfe9180
 # ╠═ec759fc7-0e51-4f15-bd37-9eeb414b4694
